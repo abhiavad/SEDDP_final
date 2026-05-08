@@ -132,14 +132,6 @@ This improves:
 - future hardware implementation
 """
 
-rounded_step = round(FSW_STEP_TIME_S, 9)
-
-if abs(FSW_STEP_TIME_S - rounded_step) > 1e-12:
-    raise ValueError(
-        "FSW_STEP_TIME_S is not numerically clean. "
-        "Choose values producing a finite practical timestep."
-    )
-
 # enforce nanosecond-convertible timing cleanly
 fsw_step_ns = FSW_STEP_TIME_S * 1e9
 
