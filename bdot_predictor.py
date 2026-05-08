@@ -1,14 +1,14 @@
 import numpy as np
 from Basilisk.architecture import messaging
 from Basilisk.architecture import sysModel
-from fsw_config import FSW_DT_S, ESTIMATION_BUFFER_SIZE
+from fsw_config import FSW_STEP_TIME_S, ESTIMATION_BUFFER_SIZE
 
 
 class BdotPredictor(sysModel.SysModel):
 
     def __init__(self):
         super().__init__()
-        self.dt = float(FSW_DT_S)
+        self.dt = float(FSW_STEP_TIME_S)
         self.ModelTag = "BdotPredictor"
 
         self.bInMsg = messaging.TAMSensorBodyMsgReader()
@@ -26,7 +26,7 @@ class BdotPredictor(sysModel.SysModel):
         self.Bdot_est = np.zeros(3)
 
     def Reset(self, CurrentSimNanos):
-        self.dt = float(FSW_DT_S)
+        self.dt = float(FSW_STEP_TIME_S)
         
     def UpdateState(self, CurrentSimNanos):
 
