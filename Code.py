@@ -135,7 +135,7 @@ def run():
     simulationTime = macros.sec2nano(SIMULATION_TIME_S)
 
     simStepTime = macros.sec2nano(DYN_DT_S)
-    fswStepTime = macros.sec2nano(FSW_DT_S)
+    fswStepTime = macros.sec2nano(FSW_STEP_TIME_S)
 
     dynsamplingTime = simStepTime
     fswsamplingTime = fswStepTime

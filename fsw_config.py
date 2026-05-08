@@ -15,7 +15,49 @@ import math
 # TIMING (FROM adcs_config.FSW_CONFIG)
 # ==========================================================
 
-FSW_DT_S = 0.1
+# ==========================================================
+# FSW CONTROL LOOP TIMING
+# ==========================================================
+
+"""
+CONTROL ARCHITECTURE
+--------------------
+
+The ADCS control loop is divided into two phases:
+
+1. SENSING
+    - collect magnetometer samples
+    - estimate B-dot
+
+2. ACTUATION
+    - hold commanded MTB dipole constant
+
+The total control loop duration is:
+
+    FSW_CONTROL_LOOP_DT_S
+
+Internally, the FSW executes at a smaller
+discrete scheduler interval:
+
+    FSW_STEP_TIME_S
+
+where:
+
+    FSW_STEP_TIME_S
+        = FSW_CONTROL_LOOP_DT_S / (NS + NA)
+
+To maintain symmetric sensing/actuation timing:
+
+    NA = NS
+
+Therefore:
+
+    FSW_STEP_TIME_S
+        = FSW_CONTROL_LOOP_DT_S / (2 * NS)
+"""
+
+# Total sensing + actuation cycle duration [s]
+FSW_CONTROL_LOOP_DT_S = 0.8
 
 
 # ==========================================================
@@ -43,18 +85,81 @@ MAX_DIPOLE_AM2 = (0.065, 0.065, 0.065)
 
 
 # ==========================================================
-# MODE SCHEDULER (FROM FSW_CONFIG)
+# SCHEDULER DISCRETIZATION
 # ==========================================================
 
-NS = 4   # sensing steps
-NA = 4   # actuation steps
+"""
+NS:
+    Number of sensing samples collected
+    during each sensing phase.
 
+NA:
+    Number of actuation-hold intervals.
+
+Architecture constraint:
+    actuation duration = sensing duration
+
+Therefore:
+    NA is always forced equal to NS.
+"""
+
+NS = 4
+
+# Keep symmetric sensing/actuation timing
+NA = NS
 
 # ==========================================================
-# ACTUATION TIME (CRITICAL FOR CONTROL LAW)
+# DERIVED FSW EXECUTION STEP
 # ==========================================================
 
-TOTAL_ACTUATION_TIME = NA * FSW_DT_S
+FSW_STEP_TIME_S = (
+    FSW_CONTROL_LOOP_DT_S / (NS + NA)
+)
+
+"""
+Digital timing sanity check.
+
+Avoid awkward repeating/floating scheduler periods
+such as:
+    1/3
+    5/7
+    etc.
+
+This improves:
+- deterministic scheduling
+- numerical consistency
+- easier debugging
+- future hardware implementation
+"""
+
+rounded_step = round(FSW_STEP_TIME_S, 9)
+
+if abs(FSW_STEP_TIME_S - rounded_step) > 1e-12:
+    raise ValueError(
+        "FSW_STEP_TIME_S is not numerically clean. "
+        "Choose values producing a finite practical timestep."
+    )
+
+# enforce nanosecond-convertible timing cleanly
+fsw_step_ns = FSW_STEP_TIME_S * 1e9
+
+if abs(fsw_step_ns - round(fsw_step_ns)) > 1e-6:
+    raise ValueError(
+        "FSW_STEP_TIME_S does not map cleanly to integer nanoseconds."
+    )
+
+# ==========================================================
+# ACTUATION HOLD DURATION
+# ==========================================================
+
+"""
+Total duration for which the MTB dipole
+command is held constant.
+"""
+
+TOTAL_ACTUATION_TIME = (
+    NA * FSW_STEP_TIME_S
+)
 
 # ==========================================================
 # CONTROLLER MODE MAPPING (REPLACES adcs_config.get_controller_mode)
@@ -157,7 +262,8 @@ DIPOLE_QUANTIZATION_STEP = 0.0005
 # ==========================================================
 
 __all__ = [
-    "FSW_DT_S",
+    "FSW_STEP_TIME_S",
+    "FSW_CONTROL_LOOP_DT_S",
     "ACTIVE_CONTROLLER",
     "BDOT_GAIN",
     "OMEGA_DEADBAND_RADPS",
