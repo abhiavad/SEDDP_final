@@ -84,9 +84,42 @@ HORIZON_USE_NOISE = True
 HORIZON_NOISE_STD = [math.radians(0.5), math.radians(0.5), 0.0] # 0.5 deg max error in roll, pitch
 HORIZON_BIAS = [0.0, 0.0, 0.0]
 
-# Magnetometer (unchanged)
+# ==========================================================
+# MAGNETOMETER CONFIGURATION
+# ==========================================================
+
+# Ideal scale factor
 MAGNETOMETER_SCALE_FACTOR = 1.0
-MAGNETOMETER_NOISE_STD = [0.0, 0.0, 0.0]
+
+# White measurement noise standard deviation [Tesla]
+# 15 nT RMS
+MAGNETOMETER_NOISE_STD = [
+    15e-9,
+    15e-9,
+    15e-9
+]
+
+# Gauss-Markov walk bounds [Tesla]
+# Approximately 3-sigma drift envelope
+MAGNETOMETER_WALK_BOUNDS = [
+    45e-9,
+    45e-9,
+    45e-9
+]
+
+# Constant sensor bias [Tesla]
+# Keep zero initially
+MAGNETOMETER_BIAS = [
+    0.0,
+    0.0,
+    0.0
+]
+
+# Sensor saturation limits [Tesla]
+# ±800 uT
+MAGNETOMETER_MAX_OUTPUT = 800e-6
+MAGNETOMETER_MIN_OUTPUT = -800e-6
+
 ESTIMATION_BUFFER_SIZE = NS
 assert ESTIMATION_BUFFER_SIZE == NS, \
     "ESTIMATION_BUFFER_SIZE must equal NS (sensing window length)"
@@ -137,6 +170,10 @@ __all__ = [
     "HORIZON_BIAS",
     "MAGNETOMETER_SCALE_FACTOR",
     "MAGNETOMETER_NOISE_STD",
+    "MAGNETOMETER_WALK_BOUNDS",
+    "MAGNETOMETER_BIAS",
+    "MAGNETOMETER_MAX_OUTPUT",
+    "MAGNETOMETER_MIN_OUTPUT",
     "NUM_MTB",
     "GT_MATRIX_B",
     "STEERING_MATRIX",

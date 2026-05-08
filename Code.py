@@ -88,8 +88,6 @@ from Basilisk.fswAlgorithms import(
 from Basilisk.architecture import messaging
 
 #get location of supporting data
-from Basilisk import __path__
-bskPath = __path__[0]
 fileName = os.path.basename(os.path.splitext(__file__)[0])
  
 from Basilisk.utilities.supportDataTools.dataFetcher import get_path, DataFile
@@ -349,14 +347,14 @@ def run():
     modeLog = modeScheduler.modeOutMsg.recorder(fswsamplingTime)
     scSim.AddModelToTask(fswCoreTask, modeLog)
 
-    modeTypeLog = modeScheduler.modeTypeOutMsg.recorder(fswsamplingTime)
-    scSim.AddModelToTask(fswCoreTask, modeTypeLog)
-
     trueOmegaLog = delfi.scStateOutMsg.recorder(dynsamplingTime)
     scSim.AddModelToTask(dynTaskName, trueOmegaLog)
 
     bdotLog = bdotPredictor.bdotOutMsg.recorder(fswsamplingTime)
     scSim.AddModelToTask(fswCoreTask, bdotLog)
+
+    actuateLog = modeScheduler.actuateOutMsg.recorder(fswsamplingTime)
+    scSim.AddModelToTask(fswCoreTask, actuateLog)
     
     # =====================================================
     # ORBIT DEFINITION
@@ -423,13 +421,6 @@ def run():
         np.array(I_matrix, dtype=float).reshape(9).tolist()
     )
 
-    # delfi.hub.sigma_BNInit = [[0.1], [0.2], [-0.3]]
-
-    # delfi.hub.omega_BN_BInit = [
-    #     omega0,
-    #     -omega0,
-    #     omega0
-    # ]
     delfi.hub.sigma_BNInit = np.array(INITIAL_SIGMA_BN, dtype=float).reshape(3, 1).tolist()
 
     delfi.hub.omega_BN_BInit = np.array(INITIAL_OMEGA_BN_B_RADPS, dtype=float).reshape(3, 1).tolist()
@@ -447,17 +438,6 @@ def run():
     # ATMOSPHERIC MODEL
     # =====================================================
 
-    # Earth radius [m]
-    # atmo.planetRadius = orbitalMotion.REQ_EARTH * 1e3
-
-    # # atmospheric density model
-    # atmo.baseDensity = 3.2e-11
-    # atmo.scaleHeight = 70000.0
-
-    # # altitude bounds
-    # atmo.envMinReach = -300e3
-    # atmo.envMaxReach = 1000e3
-    # Earth radius [m]
     atmo.planetRadius = ATMOSPHERE_PLANET_RADIUS_M
 
     # atmospheric density model
@@ -472,8 +452,6 @@ def run():
     # =====================================================
     # DRAG MODEL CONNECTIONS
     # =====================================================
-
-    # dragEff.atmoDensInMsg.subscribeTo(atmo.envOutMsgs[0])
 
     aeroTorque.atmoInMsg.subscribeTo(atmo.envOutMsgs[0])
     aeroTorque.stateInMsg.subscribeTo(delfi.scStateOutMsg)
@@ -505,9 +483,6 @@ def run():
     # MAGNETIC FIELD MODEL
     # =====================================================
 
-    # epochMsg = unitTestSupport.timeStringToGregorianUTCMsg(
-    #     "2019 June 27, 10:23:0.0 (UTC)"
-    # )
     epochMsg = unitTestSupport.timeStringToGregorianUTCMsg(MAG_FIELD_EPOCH)
 
     wmm_path = get_path(DataFile.MagneticFieldData.WMM)
@@ -527,24 +502,7 @@ def run():
     # =====================================================
     # MAGNETORQUER CONFIGURATION
     # =====================================================
-    #legacy code then replacement
-    # mtbConfigParams = messaging.MTBArrayConfigMsgPayload()
 
-    # mtbConfigParams.numMTB = 3
-
-    # mtbConfigParams.GtMatrix_B = [
-    #     1., 0., 0.,
-    #     0., 1., 0.,
-    #     0., 0., 1.
-    # ]
-
-    
-
-    # maxDipole_scalar = float(maxDipole[0]) if isinstance(maxDipole, (list, np.ndarray)) else float(maxDipole)
-
-    # mtbConfigParams.maxMtbDipoles = [
-    #     maxDipole_scalar
-    # ] * mtbConfigParams.numMTB
     mtbConfigParams = messaging.MTBArrayConfigMsgPayload()
 
     mtbConfigParams.numMTB = NUM_MTB
@@ -581,13 +539,10 @@ def run():
 
     TAM.scaleFactor = MAGNETOMETER_SCALE_FACTOR
     TAM.senNoiseStd = MAGNETOMETER_NOISE_STD
-    # # Horizon sensor noise
-    # horizon.useNoise = ENABLE_SENSOR_NOISE
-
-    # # Magnetometer configuration
-    # TAM.scaleFactor = 1.0
-    # TAM.senNoiseStd = [0.0, 0.0, 0.0]
-
+    TAM.walkBounds = MAGNETOMETER_WALK_BOUNDS
+    TAM.senBias = MAGNETOMETER_BIAS
+    TAM.maxOutput = MAGNETOMETER_MAX_OUTPUT
+    TAM.minOutput = MAGNETOMETER_MIN_OUTPUT
 
     # =====================================================
     # SENSOR → FSW INTERFACES
@@ -656,12 +611,22 @@ def run():
     # ---------------------------------
 
     controller_mode = ACTIVE_CONTROLLER.strip().upper()
+    valid_modes = ["BDOT", "NADIR_POINTING"]
+
+    if controller_mode not in valid_modes:
+        raise ValueError(
+            f"Unsupported ACTIVE_CONTROLLER: {controller_mode}"
+        )
 
     if controller_mode == "BDOT":
 
         dipoleSelector.bdotDipoleInMsg.subscribeTo(
             bdotController.cmdDipoleOutMsg
         )
+
+    elif controller_mode == "NADIR_POINTING":
+
+        pass
 
     dipoleMappingObj.steeringMatrix = STEERING_MATRIX
 
@@ -704,7 +669,6 @@ def run():
     times = bdotLog.times() * 1e-9
 
     mode = np.array(modeLog.dataValue)
-    modeType = np.array(modeTypeLog.dataValue)
 
     dipole = np.array(mtbDipoleCmdsLog.mtbDipoleCmds)
     dipole_norm = np.linalg.norm(dipole, axis=1)
@@ -755,16 +719,20 @@ def run():
     trueOmega = resample_dyn(trueOmega_dyn)
     trueOmega_norm = np.linalg.norm(trueOmega, axis=1)
 
-
+    if (
+        not np.all(np.isfinite(bdot))
+        or not np.all(np.isfinite(dipole))
+        or not np.all(np.isfinite(trueOmega))
+    ):
+        raise RuntimeError("Non-finite values detected in logged data")
     # =====================================================
     # BUILD DATA MATRIX
     # =====================================================
-
+    
     data = np.column_stack((
 
         times,
         mode,
-        modeType,
 
         B_norm,
 
@@ -783,7 +751,7 @@ def run():
         mtbTorque[:,2],
 
         # -----------------------------
-        # TRUE OMEGA (ADD THIS BLOCK)
+        # TRUE BODY ANGULAR VELOCITY
         # -----------------------------
         trueOmega[:,0],
         trueOmega[:,1],
@@ -800,7 +768,6 @@ def run():
     header = (
     "time_s,"
     "mode,"
-    "modeType,"
     "B_norm_T,"
     "bdot_x_T_s,bdot_y_T_s,bdot_z_T_s,bdot_norm_T_s,"
     "dipole_x_A_m2,dipole_y_A_m2,dipole_z_A_m2,dipole_norm_A_m2,"
@@ -823,19 +790,12 @@ def run():
 
     print("Mean density:", np.mean(rhoLog.neutralDensity))
 
-    # print(
-    #     "Mean drag force:",
-    #     np.mean(np.linalg.norm(dragForceLog.forceExternal_B, axis=1))
-    # )
-
     print(
         "Mean drag torque:",
         np.mean(np.linalg.norm(aeroTorqueLog.torqueRequestBody, axis=1))
     )
 
     print("Mode sample:", modeLog.dataValue[:20])
-    print("ModeType sample:", modeTypeLog.dataValue[:20])
-    print("ModeType (first 20):", modeTypeLog.dataValue[:20])
 
 
     # =====================================================
@@ -882,19 +842,19 @@ def run():
         fileName
     )
 
-plt.figure()
+    plt.figure()
 
-labels = ['x', 'y', 'z']
+    labels = ['x', 'y', 'z']
 
-for i in range(3):
-    plt.subplot(3,1,i+1)
-    plt.plot(times, trueOmega[:,i], label=f"ω_{labels[i]}")
-    plt.ylabel("rad/s")
-    plt.legend()
-    plt.grid()
+    for i in range(3):
+        plt.subplot(3,1,i+1)
+        plt.plot(times, trueOmega[:,i], label=f"ω_{labels[i]}")
+        plt.ylabel("rad/s")
+        plt.legend()
+        plt.grid()
 
-plt.xlabel("Time [s]")
-plt.suptitle("Body Angular Velocity")
+    plt.xlabel("Time [s]")
+    plt.suptitle("Body Angular Velocity")
 
     plt.show()
     plt.close("all")

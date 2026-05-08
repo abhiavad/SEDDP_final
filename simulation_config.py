@@ -33,7 +33,7 @@ FRAME CONVENTION
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 86400*3
+SIMULATION_TIME_S = 1000
 
 DYN_DT_S = 0.05
 
@@ -73,7 +73,7 @@ MAG_FIELD_EPOCH = "2019 June 27, 10:23:0.0 (UTC)"
 INITIAL_SIGMA_BN = [0.0, 0.0, 0.0]
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [3.1415, 3.1415, 3.1415]
+INITIAL_OMEGA_BN_B_RADPS = [0.1, 0.1, 0.1]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]

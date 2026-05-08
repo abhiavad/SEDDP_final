@@ -120,13 +120,11 @@ def compute_rectangle_area(surface: np.ndarray) -> float:
 lx = LX_M
 ly = LY_M
 lz = LZ_M
-panel_z = -lz/2 - lp*np.cos(np.deg2rad(180-theta_deg))
-
 lp = LP_M
-
 theta_deg = THETA_PANEL_DEG
 
 theta_rad = np.deg2rad(theta_deg)
+panel_z = -lz/2 - lp*np.cos(np.deg2rad(180-theta_deg))
 
 # ==========================================================
 # COG VECTORS

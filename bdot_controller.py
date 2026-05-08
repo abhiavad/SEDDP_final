@@ -73,6 +73,9 @@ class BdotController(sysModel.SysModel):
         else:
             omega_perp = - np.cross(B, Bdot)/ B_norm_sq
 
+            if not np.all(np.isfinite(omega_perp)):
+                omega_perp = np.zeros(3)
+
             if np.all(np.abs(omega_perp) <= OMEGA_DEADBAND_RADPS):
                 m = np.zeros(3)
             
