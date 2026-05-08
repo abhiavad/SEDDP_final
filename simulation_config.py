@@ -42,12 +42,12 @@ DYN_DT_S = 0.05
 # ==========================================================
 
 ORBIT_ELEMENTS = {
-    "a": 6678e3,            # [m]
-    "e": 0.0,               # [-]
-    "i_deg": 97.7882,       # [deg]
-    "Omega_deg": 48.2,      # [deg]
-    "omega_deg": 347.8,     # [deg]
-    "f_deg": 85.3           # [deg]
+    "a": 6678e3,            # [m] Semi-major axis - 6678e3 (300km), 6928e3 (550km), 6978e3 (600km)
+    "e": 0.0,               # [-] Eccentricity
+    "i_deg": 97.7882,       # [deg] Inclination - 96.6725 deg (300km), 97.67 deg (550km), 97.7882 deg (600km)
+    "Omega_deg": 48.2,      # [deg] RAAN (Right Ascension of Ascending Node)
+    "omega_deg": 347.8,     # [deg] Argument of Periapsis (AoP)
+    "f_deg": 85.3           # [deg] True Anomaly
 }
 
 # ==========================================================
@@ -56,9 +56,9 @@ ORBIT_ELEMENTS = {
 
 ATMOSPHERE_PLANET_RADIUS_M = 6378137.0
 
-ATMOSPHERE_BASE_DENSITY_KG_M3 = 4.39e-11
+ATMOSPHERE_BASE_DENSITY_KG_M3 = 4.39e-11 # 4.39e-11 (300km) , 1.05e-12 (550km) , 5.63e-13 (600km)
 
-ATMOSPHERE_SCALE_HEIGHT_M = 300000.0
+ATMOSPHERE_SCALE_HEIGHT_M = 300000.0 # 300000 (300km), 550000 (550km), 600000 (600km)
 
 ATMOSPHERE_ENV_MIN_REACH_M = -200000.0
 

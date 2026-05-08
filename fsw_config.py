@@ -57,7 +57,7 @@ Therefore:
 """
 
 # Total sensing + actuation cycle duration [s]
-FSW_CONTROL_LOOP_DT_S = 0.8
+FSW_CONTROL_LOOP_DT_S = 0.6
 
 
 # ==========================================================
@@ -73,7 +73,7 @@ ACTIVE_CONTROLLER = "BDOT"   # "BDOT" or "NADIR_POINTING"
 # ==========================================================
 
 # From get_bdot_gain()
-BDOT_GAIN = 0.05
+BDOT_GAIN = 0.00625 #plug and play
 OMEGA_DEADBAND_RADPS = 1e-4
 
 # ==========================================================
@@ -103,7 +103,7 @@ Therefore:
     NA is always forced equal to NS.
 """
 
-NS = 4
+NS = 3
 
 # Keep symmetric sensing/actuation timing
 NA = NS
