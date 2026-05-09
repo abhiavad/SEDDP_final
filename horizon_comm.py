@@ -20,7 +20,7 @@ class HorizonComm(sysModel.SysModel):
             return
 
         nadir = self.nadirInMsg()
-        nadir_B = np.asarray(nadir.rHat_XB_B)
+        nadir_B = np.asarray(nadir.rHat_XB_B, dtype=float).reshape(3)
         if not np.all(np.isfinite(nadir_B)):
             return
 

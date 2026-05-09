@@ -101,6 +101,8 @@ from bdot_predictor import BdotPredictor
 from bdot_controller import BdotController
 from dipoleselector import DipoleSelector
 from Dipole_quantizer import DipoleQuantizer
+from DipoleConditioner import DipoleConditioner
+from nadir_pointing_controller import NadirPointingController
 
 def run():
 
@@ -285,11 +287,37 @@ def run():
     scSim.AddModelToTask(fswCoreTask, bdotPredictor)
 
 
-    bdotController = BdotController(I_matrix)
+    # ---------------------------------
+    # Mode-dependent B-dot gain
+    # ---------------------------------
+
+    controller_mode = ACTIVE_CONTROLLER.strip().upper()
+
+    if controller_mode == "BDOT":
+        bdot_gain = BDOT_GAIN
+
+    elif controller_mode == "NADIR_POINTING":
+        bdot_gain = BDOT_GAIN_NADIR
+
+    else:
+        raise ValueError(
+            f"Unsupported ACTIVE_CONTROLLER: {controller_mode}"
+        )
+
+    bdotController = BdotController(
+        I_matrix,
+        bdot_gain
+    )
     scSim.AddModelToTask(fswCoreTask, bdotController)
+
+    nadirController = NadirPointingController(I_matrix, KP_NADIR)
+    scSim.AddModelToTask(fswCoreTask, nadirController)
 
     dipoleSelector = DipoleSelector()
     scSim.AddModelToTask(fswCoreTask, dipoleSelector)
+
+    dipoleConditioner = DipoleConditioner()
+    scSim.AddModelToTask(fswCoreTask, dipoleConditioner)
 
     dipoleMappingObj = dipoleMapping.dipoleMapping()
     scSim.AddModelToTask(fswCoreTask, dipoleMappingObj)
@@ -341,7 +369,7 @@ def run():
     horizonLog = horizonCommObj.nadirOutMsg.recorder(fswsamplingTime)
     scSim.AddModelToTask(fswCoreTask, horizonLog)
 
-    mtbDipoleCmdsLog = dipoleMappingObj.dipoleRequestMtbOutMsg.recorder(fswsamplingTime)
+    mtbDipoleCmdsLog = quantizerObj.mtbCmdOutMsg.recorder(fswsamplingTime)
     scSim.AddModelToTask(fswCoreTask, mtbDipoleCmdsLog)
 
     modeLog = modeScheduler.modeOutMsg.recorder(fswsamplingTime)
@@ -597,6 +625,22 @@ def run():
         modeScheduler.actuateOutMsg
     )
 
+    # =====================================================
+    # NADIR CONTROLLER
+    # =====================================================
+
+    nadirController.actuateInMsg.subscribeTo(
+        modeScheduler.actuateOutMsg
+    )
+
+    nadirController.nadirInMsg.subscribeTo(
+        horizonCommObj.nadirOutMsg
+    )
+
+    nadirController.bInMsg.subscribeTo(
+        tamCommObj.tamOutMsg
+    )
+
 
     # =====================================================
     # CONTROLLER SELECTION
@@ -610,7 +654,6 @@ def run():
     # SIMPLE CONTROLLER SWITCH
     # ---------------------------------
 
-    controller_mode = ACTIVE_CONTROLLER.strip().upper()
     valid_modes = ["BDOT", "NADIR_POINTING"]
 
     if controller_mode not in valid_modes:
@@ -626,12 +669,22 @@ def run():
 
     elif controller_mode == "NADIR_POINTING":
 
-        pass
+        dipoleSelector.bdotDipoleInMsg.subscribeTo(
+            bdotController.cmdDipoleOutMsg
+        )
+
+        dipoleSelector.nadirDipoleInMsg.subscribeTo(
+            nadirController.cmdDipoleOutMsg
+        )
+
+    dipoleConditioner.dipoleInMsg.subscribeTo(
+        dipoleSelector.dipoleOutMsg
+    )
 
     dipoleMappingObj.steeringMatrix = STEERING_MATRIX
 
     dipoleMappingObj.dipoleRequestBodyInMsg.subscribeTo(
-        dipoleSelector.dipoleOutMsg
+        dipoleConditioner.dipoleOutMsg
     )
 
     dipoleMappingObj.mtbArrayConfigParamsInMsg.subscribeTo(

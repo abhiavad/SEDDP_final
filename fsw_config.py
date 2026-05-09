@@ -63,18 +63,88 @@ FSW_CONTROL_LOOP_DT_S = 0.6
 # ==========================================================
 # CONTROLLER SELECTION
 # ==========================================================
-
-# Converted to uppercase for Code.py compatibility
-ACTIVE_CONTROLLER = "BDOT"   # "BDOT" or "NADIR_POINTING"
-
+# Active flight-control mode.
+#
+# Supported modes:
+#   "BDOT"
+#   "NADIR_POINTING"
+ACTIVE_CONTROLLER = "NADIR_POINTING"
 
 # ==========================================================
 # CONTROLLER GAINS
 # ==========================================================
 
-# From get_bdot_gain()
-BDOT_GAIN = 0.00625 #plug and play
+# ----------------------------------------------------------
+# B-DOT DETUMBLE
+# ----------------------------------------------------------
+
+# Existing validated detumble gain
+BDOT_GAIN = 0.00625
+
+# Future nadir-mode damping gain.
+#
+# IMPORTANT:
+# Currently intentionally identical to BDOT_GAIN
+# so that Phase A architecture preparation does
+# NOT change existing behavior.
+BDOT_GAIN_NADIR = BDOT_GAIN
+
+# Ignore extremely small estimated angular rates
 OMEGA_DEADBAND_RADPS = 1e-4
+
+
+# ----------------------------------------------------------
+# NADIR POINTING (PHASE A PLACEHOLDERS)
+# ----------------------------------------------------------
+
+# Geometric nadir-pointing proportional gain.
+#
+# Shared by:
+#   - Y-axis steering
+#   - Z-axis steering
+#
+# Torque law:
+#
+#   tau_align =
+#       Kp * [0, Iyy*y_ang, Izz*z_ang]
+#
+# Initially kept at zero during
+# architecture validation.
+KP_NADIR = 0.00025
+
+# ----------------------------------------------------------
+# RECOVERY MODE THRESHOLDS
+# ----------------------------------------------------------
+
+"""
+Recovery-mode hysteresis thresholds.
+
+Recovery logic is based on the angle between:
+    body +X axis
+and:
+    nadir vector.
+
+Recovery mode is entered when:
+    +X points sufficiently away from nadir.
+
+Recovery mode is exited only after:
+    +X safely returns toward nadir.
+
+Using separate thresholds prevents
+mode-chatter near 90-degree pointing error.
+"""
+
+# Enter recovery mode if:
+# angle(+X, nadir) exceeds this value.
+RECOVERY_ENTER_ANGLE_DEG = 95.0
+
+# Exit recovery mode if:
+# angle(+X, nadir) falls below this value.
+RECOVERY_EXIT_ANGLE_DEG = 85.0
+
+# No nadir-pointing torque applied if:
+# angle(+X, nadir) is below this threshold.
+NADIR_POINTING_DEADBAND_DEG = 5.0
 
 # ==========================================================
 # ACTUATOR LIMITS
@@ -164,11 +234,19 @@ def get_controller_mode_int() -> int:
     0 → BDOT
     1 → NADIR_POINTING
     """
+
     mapping = {
         "BDOT": 0,
         "NADIR_POINTING": 1,
     }
-    return mapping.get(ACTIVE_CONTROLLER, 0)
+
+    if ACTIVE_CONTROLLER not in mapping:
+        raise ValueError(
+            f"Unsupported ACTIVE_CONTROLLER: {ACTIVE_CONTROLLER}"
+        )
+
+    return mapping[ACTIVE_CONTROLLER]
+
 
 # ==========================================================
 # SENSOR CONFIGURATION
@@ -245,9 +323,8 @@ STEERING_MATRIX = [
 # QUANTIZATION
 # ==========================================================
 
-# Keep consistent with your existing file
+# Magnetorquer dipole-command quantization step
 DIPOLE_QUANTIZATION_STEP = 0.0005
-
 
 # ==========================================================
 # EXPORT
@@ -258,7 +335,11 @@ __all__ = [
     "FSW_CONTROL_LOOP_DT_S",
     "ACTIVE_CONTROLLER",
     "BDOT_GAIN",
+    "BDOT_GAIN_NADIR",
     "OMEGA_DEADBAND_RADPS",
+    "KP_NADIR",
+    "RECOVERY_ENTER_ANGLE_DEG",
+    "RECOVERY_EXIT_ANGLE_DEG",
     "MAX_DIPOLE_AM2",
     "NS",
     "NA",

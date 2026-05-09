@@ -230,6 +230,62 @@ def plotOrbits(
 
     figureList[pltName] = plt.figure(14)
 
+    # =====================================================
+    # +X AXIS VS NADIR VECTOR ANGLE
+    # =====================================================
+
+    angle_x_nadir_deg = np.zeros(len(dynTime))
+
+    for i in range(len(dynTime)):
+
+        r_N = posData[i]
+
+        r_hat_N = r_N / np.linalg.norm(r_N)
+
+        # Nadir direction in inertial frame
+        nadir_hat_N = -r_hat_N
+
+        sigma_BN = attData[i]
+
+        C_BN = rbk.MRP2C(sigma_BN)
+
+        # body +X axis expressed in inertial frame
+        plus_x_N = C_BN.T @ np.array([1.0, 0.0, 0.0])
+
+        cos_angle = np.dot(
+            plus_x_N,
+            nadir_hat_N
+        )
+
+        cos_angle = np.clip(
+            cos_angle,
+            -1.0,
+            1.0
+        )
+
+        angle_x_nadir_deg[i] = np.degrees(
+            np.arccos(cos_angle)
+        )
+
+    plt.figure(15)
+
+    plt.plot(
+        dynTime * macros.NANO2MIN,
+        angle_x_nadir_deg
+    )
+
+    plt.xlabel("Time [min]")
+
+    plt.ylabel("Angle [deg]")
+
+    plt.title("+X Axis vs Nadir Vector")
+
+    plt.grid(True)
+
+    pltName = fileName + "15"
+
+    figureList[pltName] = plt.figure(15)
+
     
 
     return figureList, finalDiff

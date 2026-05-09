@@ -33,22 +33,23 @@ class HorizonSensor(sysModel.SysModel):
         att   = self.attInMsg()
 
         # Get position and normalize for Nadir (N-frame)
-        r_N = np.asarray(state.r_BN_N).reshape(3,1)
-        r_norm = np.linalg.norm(r_N)
-        
-        if r_norm < 1e-10:
-            nadir_N = np.zeros(3)
-        else:
-            nadir_N = -r_N / r_norm
 
-        # Rotate Nadir to Body frame
-        sigma_BN = np.asarray(att.sigma_BN, dtype=float).flatten()
+        r_N = np.asarray(state.r_BN_N, dtype=float).reshape(3)
+
+        sigma_BN = np.asarray(att.sigma_BN, dtype=float).reshape(3)
 
         if (
             not np.all(np.isfinite(r_N))
             or not np.all(np.isfinite(sigma_BN))
         ):
             return
+
+        r_norm = np.linalg.norm(r_N)
+
+        if r_norm < 1e-10:
+            nadir_N = np.zeros(3, dtype=float)
+        else:
+            nadir_N = -r_N / r_norm
 
         C_BN = rbk.MRP2C(sigma_BN)
         nadir_B = (C_BN @ nadir_N).flatten()
@@ -60,22 +61,20 @@ class HorizonSensor(sysModel.SysModel):
             pitch_err = np.random.uniform(-self.senNoiseStd[1], self.senNoiseStd[1]) + self.bias[1]
             yaw_err = np.random.uniform(-self.senNoiseStd[2], self.senNoiseStd[2]) + self.bias[2]
 
-            # Construct small-angle rotation matrix (C_err = I - [theta x])
-            C_err = np.array([
-                [1,          yaw_err,  -pitch_err],
-                [-yaw_err,   1,         roll_err],
-                [pitch_err, -roll_err,  1]
-            ])
-            
-            # Rotate the true vector by the error matrix to get the noisy vector
+            # Construct true small-angle rotation
+
+            C_err = rbk.euler1232C(np.array([roll_err, pitch_err, yaw_err]))
+            # Rotate true vector into noisy measurement
             nadir_B = C_err @ nadir_B
+            if not np.all(np.isfinite(nadir_B)):
+                nadir_B = np.zeros(3, dtype=float)
 
         # Final normalization to ensure it remains a valid unit direction vector
         norm = np.linalg.norm(nadir_B)
         if norm > 1e-10:
             nadir_B = nadir_B / norm
         else:
-            nadir_B = np.zeros(3)
+            nadir_B = np.zeros(3, dtype=float)
 
         payload = messaging.BodyHeadingMsgPayload()
         payload.rHat_XB_B = nadir_B.tolist() 
