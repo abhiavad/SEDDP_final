@@ -1,17 +1,17 @@
 import numpy as np
 from Basilisk.architecture import messaging
 from Basilisk.architecture import sysModel
+from magnetic_control_shared import (
+    write_zero_dipole,
+)
 
 from fsw_config import (
-    BDOT_GAIN,
-    MAX_DIPOLE_AM2,
-    TOTAL_ACTUATION_TIME,
     OMEGA_DEADBAND_RADPS
 )
 
 class BdotController(sysModel.SysModel):
 
-    def __init__(self, I_matrix):
+    def __init__(self, I_matrix, baseGain):
         super().__init__()
         self.ModelTag = "BdotController"
 
@@ -24,10 +24,17 @@ class BdotController(sysModel.SysModel):
         self.cmdDipoleOutMsg = messaging.DipoleRequestBodyMsg()
 
         # Controller parameters
-        self.I = np.array(I_matrix, dtype=float)
-        
-        self.max_dipole = np.array(MAX_DIPOLE_AM2, dtype=float)
-        self.k = BDOT_GAIN   # keeps same sign behavior as before
+        self.I = np.asarray(I_matrix, dtype=float)
+        if self.I.shape != (3, 3):
+            raise ValueError(
+                "I_matrix must be 3x3"
+            )
+
+        if not np.all(np.isfinite(self.I)):
+            raise ValueError(
+                "I_matrix contains invalid values"
+            )
+        self.gain = float(baseGain)
 
     def UpdateState(self, CurrentSimNanos):
 
@@ -37,18 +44,20 @@ class BdotController(sysModel.SysModel):
         actuate = int(self.actuateInMsg().dataValue) if self.actuateInMsg.isWritten() else 0
 
         if actuate != 1:
-            payload = messaging.DipoleRequestBodyMsgPayload()
-            payload.dipole_B = [0.0, 0.0, 0.0]
-            self.cmdDipoleOutMsg.write(payload, CurrentSimNanos)
+            write_zero_dipole(
+                self.cmdDipoleOutMsg,
+                CurrentSimNanos
+            )
             return
 
         # --------------------------
         # Validate inputs
         # --------------------------
         if not self.bInMsg.isWritten() or not self.bdotInMsg.isWritten():
-            payload = messaging.DipoleRequestBodyMsgPayload()
-            payload.dipole_B = [0.0, 0.0, 0.0]
-            self.cmdDipoleOutMsg.write(payload, CurrentSimNanos)
+            write_zero_dipole(
+                self.cmdDipoleOutMsg,
+                CurrentSimNanos
+            )
             return
 
         # --------------------------
@@ -57,8 +66,10 @@ class BdotController(sysModel.SysModel):
         bMsg = self.bInMsg()
         bdotMsg = self.bdotInMsg()
 
-        B = np.asarray(bMsg.tam_B, dtype=float)
-        Bdot = np.asarray(bdotMsg.rHat_XB_B, dtype=float)
+        B = np.asarray(bMsg.tam_B, dtype=float).reshape(3)
+        Bdot = np.asarray(bdotMsg.rHat_XB_B, dtype=float).reshape(3)
+
+
         B_norm_sq = np.dot(B, B)
 
         # --------------------------
@@ -71,7 +82,7 @@ class BdotController(sysModel.SysModel):
         ):
             m = np.zeros(3)
         else:
-            omega_perp = - np.cross(B, Bdot)/ B_norm_sq
+            omega_perp = -np.cross(B, Bdot) / B_norm_sq
 
             if not np.all(np.isfinite(omega_perp)):
                 omega_perp = np.zeros(3)
@@ -83,18 +94,11 @@ class BdotController(sysModel.SysModel):
 
                 L_perp = self.I @ omega_perp
 
-                m = -self.k * np.cross(B, L_perp) / B_norm_sq
+                m = -self.gain * np.cross(B, L_perp) / B_norm_sq
+                
 
-                # time scaling
-                m /= TOTAL_ACTUATION_TIME
-
-                # saturation
-                ratios = np.abs(m) / self.max_dipole
-                max_ratio = np.max(ratios)
-
-                if max_ratio > 1.0:
-                    m = m / max_ratio
-
+        if not np.all(np.isfinite(m)):
+            m = np.zeros(3)
         # --------------------------
         # Output
         # --------------------------

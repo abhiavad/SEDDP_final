@@ -56,7 +56,7 @@ class ModeScheduler(sysModel.SysModel):
 
         else:
             phase = 2  # actuation
-            actuate = 1   # ← CRITICAL FIX: active for ALL Na steps
+            actuate = 1 
 
         # -----------------------------
         # OUTPUT: MODE

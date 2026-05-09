@@ -26,7 +26,12 @@ class BdotPredictor(sysModel.SysModel):
         self.Bdot_est = np.zeros(3)
 
     def Reset(self, CurrentSimNanos):
+
         self.dt = float(FSW_STEP_TIME_S)
+        self.prevMode = None
+        self.B_buffer = []
+        self.t_buffer = []
+        self.Bdot_est = np.zeros(3)
         
     def UpdateState(self, CurrentSimNanos):
 
@@ -36,7 +41,11 @@ class BdotPredictor(sysModel.SysModel):
         mode = int(self.modeInMsg().dataValue)
 
         bMsg = self.bInMsg()
-        B = np.asarray(bMsg.tam_B)
+
+        B = np.asarray(bMsg.tam_B, dtype=float).reshape(3)
+
+        if not np.all(np.isfinite(B)):
+            return
         # Use simulation time only (consistent with scheduler)
         t = CurrentSimNanos * 1e-9
 
@@ -69,13 +78,16 @@ class BdotPredictor(sysModel.SysModel):
                     dB = self.B_buffer[i] - self.B_buffer[i - 1]
                     dt = self.t_buffer[i] - self.t_buffer[i - 1]
 
-                    # Fallback protection
-                    if dt <= 1e-9:
-                        dt = self.dt
-
                     bdot_samples.append(dB / dt)
 
-                self.Bdot_est = np.mean(bdot_samples, axis=0)
+                if len(bdot_samples) > 0:
+
+                    self.Bdot_est = np.mean(bdot_samples, axis=0)
+                    if not np.all(np.isfinite(self.Bdot_est)):
+                        self.Bdot_est = np.zeros(3)
+
+                else:
+                    self.Bdot_est = np.zeros(3)
 
         # --------------------------------------
         # OUTPUT (HOLD LAST ESTIMATED VALUES)

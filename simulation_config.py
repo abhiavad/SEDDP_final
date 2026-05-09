@@ -28,12 +28,17 @@ FRAME CONVENTION
 - Origin is spacecraft reference point.
 - Total spacecraft CG is computed in mass_properties.py.
 """
+import numpy as np
 
+from Basilisk.utilities import (
+    orbitalMotion,
+    RigidBodyKinematics as rbk,
+)
 # ==========================================================
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 1000
+SIMULATION_TIME_S = 5400
 
 DYN_DT_S = 0.05
 
@@ -44,7 +49,7 @@ DYN_DT_S = 0.05
 ORBIT_ELEMENTS = {
     "a": 6678e3,            # [m] Semi-major axis - 6678e3 (300km), 6928e3 (550km), 6978e3 (600km)
     "e": 0.0,               # [-] Eccentricity
-    "i_deg": 97.7882,       # [deg] Inclination - 96.6725 deg (300km), 97.67 deg (550km), 97.7882 deg (600km)
+    "i_deg": 96.6725,       # [deg] Inclination - 96.6725 deg (300km), 97.67 deg (550km), 97.7882 deg (600km)
     "Omega_deg": 48.2,      # [deg] RAAN (Right Ascension of Ascending Node)
     "omega_deg": 347.8,     # [deg] Argument of Periapsis (AoP)
     "f_deg": 85.3           # [deg] True Anomaly
@@ -70,10 +75,181 @@ MAG_FIELD_EPOCH = "2019 June 27, 10:23:0.0 (UTC)"
 # INITIAL CONDITIONS / DISTURBANCE TRUTH
 # ==========================================================
 
-INITIAL_SIGMA_BN = [0.0, 0.0, 0.0]
+"""
+Initial attitude construction.
+
+Nominal reference frame:
++X_B -> nadir
++Z_B -> velocity
+
+A body-frame perturbation rotation is then applied.
+"""
+
+# ----------------------------------------------------------
+# BODY-FRAME PERTURBATION
+# ----------------------------------------------------------
+
+INITIAL_PERTURBATION_AXIS_B = np.array([
+    0.0,
+    0.0,
+    1.0,
+])
+
+INITIAL_PERTURBATION_ANGLE_DEG = 180.0
+
+# ----------------------------------------------------------
+# ORBITAL STATE
+# ----------------------------------------------------------
+
+MU_EARTH = 3.986004418e14
+
+oe = orbitalMotion.ClassicElements()
+
+oe.a = ORBIT_ELEMENTS["a"]
+oe.e = ORBIT_ELEMENTS["e"]
+
+oe.i = np.deg2rad(
+    ORBIT_ELEMENTS["i_deg"]
+)
+
+oe.Omega = np.deg2rad(
+    ORBIT_ELEMENTS["Omega_deg"]
+)
+
+oe.omega = np.deg2rad(
+    ORBIT_ELEMENTS["omega_deg"]
+)
+
+oe.f = np.deg2rad(
+    ORBIT_ELEMENTS["f_deg"]
+)
+
+r_N, v_N = orbitalMotion.elem2rv(
+    MU_EARTH,
+    oe
+)
+
+r_N = np.array(r_N, dtype=float)
+
+v_N = np.array(v_N, dtype=float)
+
+if (
+    not np.all(np.isfinite(r_N))
+    or not np.all(np.isfinite(v_N))
+):
+    raise ValueError(
+        "Invalid orbital state vectors."
+    )
+
+r_norm = np.linalg.norm(r_N)
+
+v_norm = np.linalg.norm(v_N)
+
+if r_norm < 1e-12:
+    raise ValueError(
+        "Orbital position vector is too small."
+    )
+
+if v_norm < 1e-12:
+    raise ValueError(
+        "Orbital velocity vector is too small."
+    )
+
+# ----------------------------------------------------------
+# NOMINAL BODY FRAME
+# ----------------------------------------------------------
+
+# +X_B -> nadir
+xB_N = -r_N / r_norm
+
+# +Z_B -> velocity
+zB_N = v_N / v_norm
+
+# Complete right-handed frame
+yB_N = np.cross(zB_N, xB_N)
+
+y_norm = np.linalg.norm(yB_N)
+
+if y_norm < 1e-12:
+    raise ValueError(
+        "Velocity and nadir vectors are degenerate."
+    )
+
+yB_N /= y_norm
+
+# Re-orthogonalize
+zB_N = np.cross(xB_N, yB_N)
+
+zB_N /= np.linalg.norm(zB_N)
+
+# ----------------------------------------------------------
+# NOMINAL DCM
+# ----------------------------------------------------------
+
+C_BN_nominal = np.vstack([
+    xB_N,
+    yB_N,
+    zB_N,
+])
+
+# ----------------------------------------------------------
+# BODY-FRAME PERTURBATION QUATERNION
+# ----------------------------------------------------------
+
+axis_B = np.array(
+    INITIAL_PERTURBATION_AXIS_B,
+    dtype=float
+)
+
+axis_norm = np.linalg.norm(axis_B)
+
+if axis_norm < 1e-12:
+    raise ValueError(
+        "INITIAL_PERTURBATION_AXIS_B must be non-zero."
+    )
+
+axis_B /= axis_norm
+
+angle_rad = np.deg2rad(
+    INITIAL_PERTURBATION_ANGLE_DEG
+)
+
+q0 = np.cos(angle_rad / 2.0)
+
+q_vec = axis_B * np.sin(angle_rad / 2.0)
+
+quat = np.hstack([
+    q_vec,
+    q0
+])
+
+# ----------------------------------------------------------
+# QUATERNION -> DCM
+# ----------------------------------------------------------
+
+C_perturb = rbk.EP2C(quat)
+
+# ----------------------------------------------------------
+# FINAL ATTITUDE
+# ----------------------------------------------------------
+
+C_BN = C_perturb @ C_BN_nominal
+if not np.all(np.isfinite(C_BN)):
+    raise ValueError(
+        "Invalid initial attitude DCM."
+    )
+
+INITIAL_SIGMA_BN = rbk.C2MRP(
+    C_BN
+).tolist()
+
+if not np.all(np.isfinite(INITIAL_SIGMA_BN)):
+    raise ValueError(
+        "Invalid INITIAL_SIGMA_BN."
+    )
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [0.1, 0.1, 0.1]
+INITIAL_OMEGA_BN_B_RADPS = [0.00, 0.00, 0.00]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]
