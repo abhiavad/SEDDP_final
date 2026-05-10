@@ -47,7 +47,7 @@ OUTPUT_FOLDER_NAME = "Run_01"
 
 SIMULATION_TIME_S = 1000
 
-DYN_DT_S = 0.05
+DYN_DT_S = 0.09
 
 # ==========================================================
 # LOGGING
@@ -273,7 +273,7 @@ if not np.all(np.isfinite(INITIAL_SIGMA_BN)):
     )
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [0.00, 0.00, 0.00]
+INITIAL_OMEGA_BN_B_RADPS = [3.14159, 3.14159, 3.14159]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]
@@ -319,7 +319,7 @@ LP_M = 0.15
 # PANEL DEPLOYMENT ANGLE [deg]
 # ----------------------------------------------------------
 
-THETA_PANEL_DEG = 135.0
+THETA_PANEL_DEG = 180.0
 
 # ==========================================================
 # SPACECRAFT MASS PROPERTIES

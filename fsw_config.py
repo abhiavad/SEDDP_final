@@ -57,7 +57,7 @@ Therefore:
 """
 
 # Total sensing + actuation cycle duration [s]
-FSW_CONTROL_LOOP_DT_S = 0.6
+FSW_CONTROL_LOOP_DT_S = 0.18
 
 
 # ==========================================================
@@ -68,7 +68,7 @@ FSW_CONTROL_LOOP_DT_S = 0.6
 # Supported modes:
 #   "BDOT"
 #   "NADIR_POINTING"
-ACTIVE_CONTROLLER = "NADIR_POINTING"
+ACTIVE_CONTROLLER = "BDOT"
 
 # ==========================================================
 # CONTROLLER GAINS
