@@ -63,6 +63,7 @@ from Basilisk.utilities import (
     orbitalMotion,
     simIncludeGravBody,
     unitTestSupport,
+    RigidBodyKinematics as rbk,
     # vizSupport,
 )
 
@@ -742,6 +743,13 @@ def run():
 
     trueOmega_dyn = np.array(trueOmegaLog.omega_BN_B)
 
+    # -----------------------------------------------------
+    # Orbit state history
+    # -----------------------------------------------------
+
+    posData = np.array(dataRec.r_BN_N)
+
+    velData = np.array(dataRec.v_BN_N)
 
     # =====================================================
     # RESAMPLING UTILITIES
@@ -771,6 +779,128 @@ def run():
 
     trueOmega = resample_dyn(trueOmega_dyn)
     trueOmega_norm = np.linalg.norm(trueOmega, axis=1)
+
+    # =====================================================
+    # ADDITIONAL PLOTTED VARIABLES
+    # =====================================================
+
+    # -----------------------------------------------------
+    # Magnetic field vector
+    # -----------------------------------------------------
+
+    B_vec = resample_dyn(B_dyn)
+
+    # -----------------------------------------------------
+    # Disturbance torques
+    # -----------------------------------------------------
+
+    magDistTorque = resample_dyn(
+        np.array(MagDistLog.torqueRequestBody)
+    )
+
+    ggTorque = resample_dyn(
+        np.array(ggLog.gravityGradientTorque_B)
+    )
+
+    aeroTorqueVec = resample_dyn(
+        np.array(aeroTorqueLog.torqueRequestBody)
+    )
+
+    # =====================================================
+    # POINTING ANGLES
+    # =====================================================
+
+    # -----------------------------------------------------
+    # +Z axis vs velocity angle
+    # -----------------------------------------------------
+
+    angle_z_vel_deg_dyn = np.zeros(len(dynTimes))
+
+    for i in range(len(dynTimes)):
+
+        v_N = velData[i]
+
+        v_norm = np.linalg.norm(v_N)
+
+        if v_norm < 1e-12:
+            continue
+
+        v_hat_N = v_N / v_norm
+
+        sigma_BN = dataRec.sigma_BN[i]
+
+        C_BN = rbk.MRP2C(sigma_BN)
+
+        plus_z_N = C_BN.T @ np.array([
+            0.0,
+            0.0,
+            1.0
+        ])
+
+        cos_angle = np.dot(
+            plus_z_N,
+            v_hat_N
+        )
+
+        cos_angle = np.clip(
+            cos_angle,
+            -1.0,
+            1.0
+        )
+
+        angle_z_vel_deg_dyn[i] = np.degrees(
+            np.arccos(cos_angle)
+        )
+
+    angle_z_vel_deg = resample_dyn_scalar(
+        angle_z_vel_deg_dyn
+    )
+
+    # -----------------------------------------------------
+    # +X axis vs nadir angle
+    # -----------------------------------------------------
+
+    angle_x_nadir_deg_dyn = np.zeros(len(dynTimes))
+
+    for i in range(len(dynTimes)):
+
+        r_N = posData[i]
+
+        r_norm = np.linalg.norm(r_N)
+
+        if r_norm < 1e-12:
+            continue
+
+        nadir_hat_N = -r_N / r_norm
+
+        sigma_BN = dataRec.sigma_BN[i]
+
+        C_BN = rbk.MRP2C(sigma_BN)
+
+        plus_x_N = C_BN.T @ np.array([
+            1.0,
+            0.0,
+            0.0
+        ])
+
+        cos_angle = np.dot(
+            plus_x_N,
+            nadir_hat_N
+        )
+
+        cos_angle = np.clip(
+            cos_angle,
+            -1.0,
+            1.0
+        )
+
+        angle_x_nadir_deg_dyn[i] = np.degrees(
+            np.arccos(cos_angle)
+        )
+
+    angle_x_nadir_deg = resample_dyn_scalar(
+        angle_x_nadir_deg_dyn
+    )
 
     if (
         not np.all(np.isfinite(bdot))
@@ -818,23 +948,196 @@ def run():
     # CSV EXPORT
     # =====================================================
 
-    header = (
-    "time_s,"
-    "mode,"
-    "B_norm_T,"
-    "bdot_x_T_s,bdot_y_T_s,bdot_z_T_s,bdot_norm_T_s,"
-    "dipole_x_A_m2,dipole_y_A_m2,dipole_z_A_m2,dipole_norm_A_m2,"
-    "mtb_torque_x_Nm,mtb_torque_y_Nm,mtb_torque_z_Nm,"
-    "true_omega_x_rad_s,true_omega_y_rad_s,true_omega_z_rad_s,true_omega_norm_rad_s"
+    data = np.column_stack((
+
+        # =================================================
+        # TIME + MODE
+        # =================================================
+
+        times,
+        mode,
+
+        # =================================================
+        # MAGNETIC FIELD
+        # =================================================
+
+        B_vec[:,0],
+        B_vec[:,1],
+        B_vec[:,2],
+        B_norm,
+
+        # =================================================
+        # B-DOT
+        # =================================================
+
+        bdot[:,0],
+        bdot[:,1],
+        bdot[:,2],
+        bdot_norm,
+
+        # =================================================
+        # DIPOLE COMMAND
+        # =================================================
+
+        dipole[:,0],
+        dipole[:,1],
+        dipole[:,2],
+        dipole_norm,
+
+        # =================================================
+        # MTB TORQUE
+        # =================================================
+
+        mtbTorque[:,0],
+        mtbTorque[:,1],
+        mtbTorque[:,2],
+
+        # =================================================
+        # DISTURBANCE TORQUES
+        # =================================================
+
+        magDistTorque[:,0],
+        magDistTorque[:,1],
+        magDistTorque[:,2],
+
+        ggTorque[:,0],
+        ggTorque[:,1],
+        ggTorque[:,2],
+
+        aeroTorqueVec[:,0],
+        aeroTorqueVec[:,1],
+        aeroTorqueVec[:,2],
+
+        # =================================================
+        # BODY RATES
+        # =================================================
+
+        trueOmega[:,0],
+        trueOmega[:,1],
+        trueOmega[:,2],
+        trueOmega_norm,
+
+        # =================================================
+        # POINTING METRICS
+        # =================================================
+
+        angle_z_vel_deg,
+        angle_x_nadir_deg
+
+    ))
+
+    csv_metadata = f"""# =====================================================
+    # ADCS Simulation Log
+    # =====================================================
+    #
+    # Simulation file:
+    # {fileName}
+    #
+    # Active controller:
+    # {ACTIVE_CONTROLLER}
+    #
+    # Dynamics timestep [s]:
+    # {DYN_DT_S}
+    #
+    # FSW timestep [s]:
+    # {FSW_STEP_TIME_S}
+    #
+    # =====================================================
+    # COLUMN DESCRIPTIONS
+    # =====================================================
+    #
+    # time_s
+    #     Simulation time [s]
+    #
+    # mode
+    #     Scheduler phase:
+    #         1 = sensing
+    #         2 = actuation
+    #
+    # B_x_T, B_y_T, B_z_T
+    #     Magnetic field vector [T]
+    #
+    # B_norm_T
+    #     Magnetic field magnitude [T]
+    #
+    # bdot_x_T_s, bdot_y_T_s, bdot_z_T_s
+    #     Estimated magnetic field derivative [T/s]
+    #
+    # bdot_norm_T_s
+    #     Estimated magnetic field derivative magnitude [T/s]
+    #
+    # dipole_x_A_m2, dipole_y_A_m2, dipole_z_A_m2
+    #     Commanded MTB dipole [A·m²]
+    #
+    # dipole_norm_A_m2
+    #     Commanded MTB dipole magnitude [A·m²]
+    #
+    # mtb_torque_x_Nm, mtb_torque_y_Nm, mtb_torque_z_Nm
+    #     Magnetorquer control torque [N·m]
+    #
+    # mag_dist_torque_x_Nm, mag_dist_torque_y_Nm, mag_dist_torque_z_Nm
+    #     Residual magnetic dipole disturbance torque [N·m]
+    #
+    # gg_torque_x_Nm, gg_torque_y_Nm, gg_torque_z_Nm
+    #     Gravity-gradient torque [N·m]
+    #
+    # aero_torque_x_Nm, aero_torque_y_Nm, aero_torque_z_Nm
+    #     Aerodynamic drag torque [N·m]
+    #
+    # true_omega_x_rad_s, true_omega_y_rad_s, true_omega_z_rad_s
+    #     Body angular velocity [rad/s]
+    #
+    # true_omega_norm_rad_s
+    #     Body angular velocity magnitude [rad/s]
+    #
+    # angle_z_vel_deg
+    #     Angle between body +Z axis and velocity vector [deg]
+    #
+    # angle_x_nadir_deg
+    #     Angle between body +X axis and nadir vector [deg]
+    #
+    # =====================================================
+    """
+
+    csv_columns = (
+        "time_s,"
+        "mode,"
+
+        "B_x_T,B_y_T,B_z_T,B_norm_T,"
+
+        "bdot_x_T_s,bdot_y_T_s,bdot_z_T_s,bdot_norm_T_s,"
+
+        "dipole_x_A_m2,dipole_y_A_m2,dipole_z_A_m2,dipole_norm_A_m2,"
+
+        "mtb_torque_x_Nm,mtb_torque_y_Nm,mtb_torque_z_Nm,"
+
+        "mag_dist_torque_x_Nm,mag_dist_torque_y_Nm,mag_dist_torque_z_Nm,"
+
+        "gg_torque_x_Nm,gg_torque_y_Nm,gg_torque_z_Nm,"
+
+        "aero_torque_x_Nm,aero_torque_y_Nm,aero_torque_z_Nm,"
+
+        "true_omega_x_rad_s,true_omega_y_rad_s,true_omega_z_rad_s,true_omega_norm_rad_s,"
+
+        "angle_z_vel_deg,"
+        "angle_x_nadir_deg"
     )
 
-    np.savetxt(
-        "adcs_log.csv",
-        data,
-        delimiter=",",
-        header=header,
-        comments=""
-    )
+    with open("adcs_log.csv", "w") as f:
+
+        # Metadata block
+        f.write(csv_metadata)
+
+        # Column names
+        f.write(csv_columns + "\n")
+
+        # Numeric data
+        np.savetxt(
+            f,
+            data,
+            delimiter=",",
+            fmt="%.6e"
+        )
 
 
     # =====================================================
@@ -854,9 +1157,6 @@ def run():
     # =====================================================
     # ORBIT DATA FOR PLOTTING
     # =====================================================
-
-    posData = dataRec.r_BN_N
-    velData = dataRec.v_BN_N
 
     dynTime = dataRec.times()
     fswTime = tamCommLog.times()
