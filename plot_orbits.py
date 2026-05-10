@@ -8,7 +8,7 @@ from pathlib import Path
 def plotOrbits(
 
     time_min,
-    mtb_times_min,
+    # mtb_times_min,
 
     omega,
     omega_mag,
@@ -17,7 +17,7 @@ def plotOrbits(
     ggTorque,
     aeroTorque,
 
-    dipole,
+    # dipole,
 
     angle_z_vel_deg,
     angle_x_nadir_deg,
@@ -237,36 +237,36 @@ def plotOrbits(
     # MAGNETORQUER MAGNETIC MOMENT
     # =====================================================
 
-    plt.figure(6)
+    # plt.figure(6)
 
-    for i in range(3):
+    # for i in range(3):
 
-        plt.plot(
-            mtb_times_min,
-            dipole[:, i],
-            linewidth=2.0,
-            label=f"$m_{{MTB,{labels[i]}}}$"
-        )
+    #     plt.plot(
+    #         mtb_times_min,
+    #         dipole[:, i],
+    #         linewidth=2.0,
+    #         label=f"$m_{{MTB,{labels[i]}}}$"
+    #     )
 
-    plt.title(
-        "Magnetorquer Commanded Magnetic Moment",
-        fontsize=14
-    )
+    # plt.title(
+    #     "Magnetorquer Commanded Magnetic Moment",
+    #     fontsize=14
+    # )
 
-    plt.xlabel(
-        "Time [min]",
-        fontsize=12
-    )
+    # plt.xlabel(
+    #     "Time [min]",
+    #     fontsize=12
+    # )
 
-    plt.ylabel(
-        "Magnetic Moment [A·m²]",
-        fontsize=12
-    )
+    # plt.ylabel(
+    #     "Magnetic Moment [A·m²]",
+    #     fontsize=12
+    # )
 
-    plt.legend(loc="best")
-    plt.tight_layout()
+    # plt.legend(loc="best")
+    # plt.tight_layout()
 
-    figureList[fileName + "6"] = plt.figure(6)
+    # figureList[fileName + "6"] = plt.figure(6)
 
     # =====================================================
     # +Z AXIS VS VELOCITY VECTOR
@@ -348,7 +348,7 @@ def plotOrbits(
         3: "magnetic_disturbance_torque",
         4: "gravity_gradient_torque",
         5: "aerodynamic_disturbance_torque",
-        6: "magnetorquer_magnetic_moment",
+        # 6: "magnetorquer_magnetic_moment",
         7: "z_axis_vs_velocity",
         8: "x_axis_vs_nadir"
     }

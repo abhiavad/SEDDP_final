@@ -45,7 +45,7 @@ OUTPUT_FOLDER_NAME = "Run_01"
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 5400
+SIMULATION_TIME_S = 1000
 
 DYN_DT_S = 0.05
 
@@ -64,7 +64,7 @@ DYN_DT_S = 0.05
 # - logged recorder samples
 #
 # Dynamics and FSW still run at full resolution.
-LOGGING_DT_S = 54.0
+LOGGING_DT_S = 270
 
 # ==========================================================
 # ORBIT
