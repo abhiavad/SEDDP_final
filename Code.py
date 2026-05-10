@@ -366,8 +366,8 @@ def run():
     # FSW LOGGING
     # =====================================================
 
-    mtbDipoleCmdsLog = quantizerObj.mtbCmdOutMsg.recorder(fswStepTime)
-    scSim.AddModelToTask(fswCoreTask, mtbDipoleCmdsLog)
+    # mtbDipoleCmdsLog = quantizerObj.mtbCmdOutMsg.recorder(fswStepTime)
+    # scSim.AddModelToTask(fswCoreTask, mtbDipoleCmdsLog)
     
     # =====================================================
     # ORBIT DEFINITION
@@ -706,12 +706,12 @@ def run():
     times_sec = dataRec.times() * macros.NANO2SEC
 
     times_min = times_sec / 60.0
-    mtb_times_sec = (
-        mtbDipoleCmdsLog.times()
-        * macros.NANO2SEC
-    )
+    # mtb_times_sec = (
+    #     mtbDipoleCmdsLog.times()
+    #    * macros.NANO2SEC
+    # ) 
 
-    mtb_times_min = mtb_times_sec / 60.0
+    # mtb_times_min = mtb_times_sec / 60.0
 
     omega = np.array(dataRec.omega_BN_B)
 
@@ -732,9 +732,9 @@ def run():
         aeroTorqueLog.torqueRequestBody
     )
 
-    dipole = np.array(
-        mtbDipoleCmdsLog.mtbDipoleCmds
-    )
+    # dipole = np.array(
+    #     mtbDipoleCmdsLog.mtbDipoleCmds
+    # )
 
     posData = np.array(dataRec.r_BN_N)
 
@@ -808,7 +808,7 @@ def run():
         or not np.all(np.isfinite(magDistTorque))
         or not np.all(np.isfinite(ggTorque))
         or not np.all(np.isfinite(aeroTorqueVec))
-        or not np.all(np.isfinite(dipole))
+        #or not np.all(np.isfinite(dipole))
         or not np.all(np.isfinite(angle_z_vel_deg))
         or not np.all(np.isfinite(angle_x_nadir_deg))
     ):
@@ -966,7 +966,7 @@ def run():
     figureList = plotOrbits(
 
         times_min,
-        mtb_times_min,
+        #mtb_times_min,
 
         omega,
         omega_mag,
@@ -975,7 +975,7 @@ def run():
         ggTorque,
         aeroTorqueVec,
 
-        dipole,
+        #dipole,
 
         angle_z_vel_deg,
         angle_x_nadir_deg,
