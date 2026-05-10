@@ -28,6 +28,8 @@ class HorizonComm(sysModel.SysModel):
         norm = np.linalg.norm(nadir_B)
         if norm > 1e-10:
             nadir_B = nadir_B / norm
+            if not np.all(np.isfinite(nadir_B)):
+                return
         else:
             return   # invalid vector → skip
 
