@@ -1,291 +1,372 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from Basilisk.utilities import RigidBodyKinematics as rbk
-from Basilisk.utilities import macros, orbitalMotion, unitTestSupport
+from Basilisk.utilities import unitTestSupport
+from pathlib import Path
 
 
 def plotOrbits(
-    fswTime,
-    dynTime,
-    posData,
-    velData,
-    attData,    
-    oe,
-    mu,
-    P,
-    dataRec,
-    magData,
-    mtbDipoleCmdsLog,
-    MagDistLog,
-    ggLog,
-    # dragForceLog,
-    aeroTorqueLog,
-    fileName,   # <-- explicit dependency injection
+
+    time_min,
+    mtb_times_min,
+
+    omega,
+    omega_mag,
+
+    magDistTorque,
+    ggTorque,
+    aeroTorque,
+
+    dipole,
+
+    angle_z_vel_deg,
+    angle_x_nadir_deg,
+
+    fileName,
+    output_dir
 ):
+
     plt.close("all")
-    plt.figure(1)
-    fig = plt.gcf()
-    ax = fig.gca()
-    ax.ticklabel_format(useOffset=False, style="plain")
-    finalDiff = 0.0
 
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2SEC / P,
-            posData[:, idx] / 1000.0,
-            color=unitTestSupport.getLineColor(idx, 3),
-            label="$r_{BN," + str(idx) + "}$"
-        )
+    plt.rcParams["figure.figsize"] = (10, 5)
 
-    plt.legend(loc="lower right")
-    plt.xlabel("Time [orbits]")
-    plt.ylabel("Inertial Position [km]")
+    plt.rcParams["axes.grid"] = True
 
     figureList = {}
-    pltName = fileName + "1"
-    figureList[pltName] = plt.figure(1)
+
+    labels = ["x", "y", "z"]
+
+    # =====================================================
+    # BODY ANGULAR VELOCITY COMPONENTS
+    # =====================================================
+
+    plt.figure(1)
+
+    for i in range(3):
+
+        plt.plot(
+            time_min,
+            omega[:, i],
+            color=unitTestSupport.getLineColor(i, 3),
+            linewidth=2.0,
+            label=f"$\\omega_{{B/N,{labels[i]}}}$"
+        )
+
+    plt.title(
+        "Body Angular Velocity Components",
+        fontsize=14
+    )
+
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Angular Velocity [rad/s]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+
+    plt.tight_layout()
+
+    figureList[fileName + "1"] = plt.figure(1)
+
+    # =====================================================
+    # ANGULAR VELOCITY MAGNITUDE
+    # =====================================================
 
     plt.figure(2)
-    fig = plt.gcf()
-    ax = fig.gca()
-    ax.ticklabel_format(useOffset=False, style="plain")
 
-    smaData = []
-    for idx in range(len(posData)):
-        oeData = orbitalMotion.rv2elem(mu, posData[idx], velData[idx])
-        smaData.append(oeData.a / 1000.0)
+    plt.plot(
+        time_min,
+        omega_mag,
+        linewidth=2.0,
+        label=r"$|\omega|$"
+    )
 
-    plt.plot(dynTime * macros.NANO2SEC / P, smaData)
-    plt.xlabel("time [orbit]")
-    plt.ylabel("SMA [km]")
+    plt.title(
+        "Body Angular Velocity Magnitude",
+        fontsize=14
+    )
 
-    pltName = fileName + "2"
-    figureList[pltName] = plt.figure(2)
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Angular Velocity Magnitude [rad/s]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+
+    plt.tight_layout()
+
+    figureList[fileName + "2"] = plt.figure(2)
+
+    # =====================================================
+    # RESIDUAL MAGNETIC DISTURBANCE TORQUE
+    # =====================================================
+
+    plt.figure(3)
+
+    for i in range(3):
+
+        plt.plot(
+            time_min,
+            magDistTorque[:, i],
+            linewidth=2.0,
+            label=f"$\\tau_{{mag,{labels[i]}}}$"
+        )
+
+    plt.title(
+        "Residual Magnetic Disturbance Torque",
+        fontsize=14
+    )
+
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Residual Magnetic Disturbance Torque [N·m]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+
+    plt.ticklabel_format(
+        axis="y",
+        style="sci",
+        scilimits=(0, 0)
+    )
+
+    plt.tight_layout()
+
+    figureList[fileName + "3"] = plt.figure(3)
+
+    # =====================================================
+    # GRAVITY GRADIENT TORQUE
+    # =====================================================
+
+    plt.figure(4)
+
+    for i in range(3):
+
+        plt.plot(
+            time_min,
+            ggTorque[:, i],
+            linewidth=2.0,
+            label=f"$\\tau_{{gg,{labels[i]}}}$"
+        )
+
+    plt.title(
+        "Gravity Gradient Torque",
+        fontsize=14
+    )
+
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Gravity Gradient Torque [N·m]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+
+    plt.ticklabel_format(
+        axis="y",
+        style="sci",
+        scilimits=(0, 0)
+    )
+
+    plt.tight_layout()
+
+    figureList[fileName + "4"] = plt.figure(4)
+
+    # =====================================================
+    # AERODYNAMIC DISTURBANCE TORQUE
+    # =====================================================
+
+    plt.figure(5)
+
+    for i in range(3):
+
+        plt.plot(
+            time_min,
+            aeroTorque[:, i],
+            linewidth=2.0,
+            label=f"$\\tau_{{aero,{labels[i]}}}$"
+        )
+
+    plt.title(
+        "Aerodynamic Disturbance Torque",
+        fontsize=14
+    )
+
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Aerodynamic Disturbance Torque [N·m]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+
+    plt.ticklabel_format(
+        axis="y",
+        style="sci",
+        scilimits=(0, 0)
+    )
+
+    plt.tight_layout()
+
+    figureList[fileName + "5"] = plt.figure(5)
+
+    # =====================================================
+    # MAGNETORQUER MAGNETIC MOMENT
+    # =====================================================
 
     plt.figure(6)
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2MIN,
-            dataRec.omega_BN_B[:, idx],
-            color=unitTestSupport.getLineColor(idx, 3),
-            label=r'$\omega_{B/N,' + str(idx) + '}$'
-        )
-    plt.legend(loc='lower right')
-    plt.xlabel('Time [min]')
-    plt.ylabel(r'Body Rate $\omega_{B/N}$ [rad/s]')
 
-    pltName = fileName + "6"
-    figureList[pltName] = plt.figure(6)
+    for i in range(3):
+
+        plt.plot(
+            mtb_times_min,
+            dipole[:, i],
+            linewidth=2.0,
+            label=f"$m_{{MTB,{labels[i]}}}$"
+        )
+
+    plt.title(
+        "Magnetorquer Commanded Magnetic Moment",
+        fontsize=14
+    )
+
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
+
+    plt.ylabel(
+        "Magnetic Moment [A·m²]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+    plt.tight_layout()
+
+    figureList[fileName + "6"] = plt.figure(6)
+
+    # =====================================================
+    # +Z AXIS VS VELOCITY VECTOR
+    # =====================================================
 
     plt.figure(7)
-    fig1 = plt.gcf()
-    ax = fig1.gca()
-    ax.ticklabel_format(useOffset=False, style='sci')
-    ax.get_yaxis().set_major_formatter(
-        plt.FuncFormatter(lambda x, loc: "{:,}".format(int(x)))
+
+    plt.plot(
+        time_min,
+        angle_z_vel_deg,
+        linewidth=2.0,
+        color="tab:blue",
+        label="+Z Axis vs Velocity Vector"
     )
 
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2SEC / P,
-            magData[:, idx] * 1e9,
-            color=unitTestSupport.getLineColor(idx, 3),
-            label=r'$B\_N_{' + str(idx) + '}$'
-        )
+    plt.title(
+        "Angle Between Body +Z Axis and Velocity Vector",
+        fontsize=14
+    )
 
-    plt.legend(loc='lower right')
-    plt.xlabel('Time [orbits]')
-    plt.ylabel('Magnetic Field [nT]')
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
 
-    pltName = fileName + "7"
-    figureList[pltName] = plt.figure(7)
+    plt.ylabel(
+        "Angle [deg]",
+        fontsize=12
+    )
+
+    plt.legend(loc="best")
+    plt.tight_layout()
+
+    figureList[fileName + "7"] = plt.figure(7)
+
+    # =====================================================
+    # +X AXIS VS NADIR VECTOR
+    # =====================================================
 
     plt.figure(8)
-    omegaMag = np.linalg.norm(dataRec.omega_BN_B, axis=1)
-    plt.plot(dynTime * macros.NANO2MIN, omegaMag)
-    plt.xlabel("Time [min]")
-    plt.ylabel("|ω| [rad/s]")
-    plt.title("Angular Velocity Magnitude")
-
-    pltName = fileName + "8"
-    figureList[pltName] = plt.figure(8)
-
-    plt.figure(9)
-    for idx in range(3):
-        plt.plot(
-            fswTime * macros.NANO2MIN,
-            mtbDipoleCmdsLog.mtbDipoleCmds[:, idx],
-            label=f"$m_{idx}$"
-        )
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Magnetic Moment [A m²]")
-    plt.title("Magnetorquer Magnetic Moment")
-    plt.legend()
-
-    pltName = fileName + "9"
-    figureList[pltName] = plt.figure(9)
-
-    plt.figure(10)
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2MIN,
-            MagDistLog.torqueRequestBody[:, idx],
-            label=f"tau_d_{idx}"
-        )
-    plt.xlabel("Time [min]")
-    plt.ylabel("Mag Disturbance Torque [Nm]")
-    plt.legend()
-
-    plt.figure(11)
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2MIN,
-            ggLog.gravityGradientTorque_B[:, idx],
-            label=f"tau_gg_{idx}"
-        )
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Gravity Gradient Torque [Nm]")
-    plt.legend()
-
-    pltName = fileName + "11"
-    figureList[pltName] = plt.figure(11)
-
-    # plt.figure(12)
-    # for idx in range(3):
-    #     plt.plot(
-    #         dynTime * macros.NANO2MIN,
-    #         dragForceLog.forceExternal_B[:, idx],
-    #         label=f"F_drag_{idx}"
-    #     )
-
-    # plt.xlabel("Time [min]")
-    # plt.ylabel("Aerodynamic Force [N]")
-    # plt.legend()
-
-    plt.figure(13)
-    for idx in range(3):
-        plt.plot(
-            dynTime * macros.NANO2MIN,
-            aeroTorqueLog.torqueRequestBody[:, idx],
-            label=f"tau_drag_{idx}"
-        )
-
-    plt.xlabel("Time [min]")
-    plt.ylabel("Aerodynamic Torque [Nm]")
-    plt.legend()
-
-    # =====================================================
-    # +Z AXIS VS VELOCITY VECTOR ANGLE
-    # =====================================================
-
-    angle_z_vel_deg = np.zeros(len(dynTime))
-
-    for i in range(len(dynTime)):
-
-        v_N = velData[i]
-
-        v_hat_N = v_N / np.linalg.norm(v_N)
-
-        sigma_BN = attData[i]
-
-        C_BN = rbk.MRP2C(sigma_BN)
-
-        # body +Z axis expressed in inertial frame
-        plus_z_N = C_BN.T @ np.array([0.0, 0.0, 1.0])
-
-        cos_angle = np.dot(
-            plus_z_N,
-            v_hat_N
-        )
-
-        cos_angle = np.clip(
-            cos_angle,
-            -1.0,
-            1.0
-        )
-
-        angle_z_vel_deg[i] = np.degrees(
-            np.arccos(cos_angle)
-        )
-
-    plt.figure(14)
 
     plt.plot(
-        dynTime * macros.NANO2MIN,
-        angle_z_vel_deg
+        time_min,
+        angle_x_nadir_deg,
+        linewidth=2.0,
+        color="tab:orange",
+        label="+X Axis vs Nadir Vector"
     )
 
-    plt.xlabel("Time [min]")
-
-    plt.ylabel("Angle [deg]")
-
-    plt.title("+Z Axis vs Velocity Vector")
-
-    plt.grid(True)
-
-    pltName = fileName + "14"
-
-    figureList[pltName] = plt.figure(14)
-
-    # =====================================================
-    # +X AXIS VS NADIR VECTOR ANGLE
-    # =====================================================
-
-    angle_x_nadir_deg = np.zeros(len(dynTime))
-
-    for i in range(len(dynTime)):
-
-        r_N = posData[i]
-
-        r_hat_N = r_N / np.linalg.norm(r_N)
-
-        # Nadir direction in inertial frame
-        nadir_hat_N = -r_hat_N
-
-        sigma_BN = attData[i]
-
-        C_BN = rbk.MRP2C(sigma_BN)
-
-        # body +X axis expressed in inertial frame
-        plus_x_N = C_BN.T @ np.array([1.0, 0.0, 0.0])
-
-        cos_angle = np.dot(
-            plus_x_N,
-            nadir_hat_N
-        )
-
-        cos_angle = np.clip(
-            cos_angle,
-            -1.0,
-            1.0
-        )
-
-        angle_x_nadir_deg[i] = np.degrees(
-            np.arccos(cos_angle)
-        )
-
-    plt.figure(15)
-
-    plt.plot(
-        dynTime * macros.NANO2MIN,
-        angle_x_nadir_deg
+    plt.title(
+        "Angle Between Body +X Axis and Nadir Vector",
+        fontsize=14
     )
 
-    plt.xlabel("Time [min]")
+    plt.xlabel(
+        "Time [min]",
+        fontsize=12
+    )
 
-    plt.ylabel("Angle [deg]")
+    plt.ylabel(
+        "Angle [deg]",
+        fontsize=12
+    )
 
-    plt.title("+X Axis vs Nadir Vector")
+    plt.legend(loc="best")
 
-    plt.grid(True)
+    plt.tight_layout()
 
-    pltName = fileName + "15"
+    figureList[fileName + "8"] = plt.figure(8)
 
-    figureList[pltName] = plt.figure(15)
+    # =====================================================
+    # SAVE FIGURES
+    # =====================================================
 
-    
+    figure_names = {
 
-    return figureList, finalDiff
+        1: "angular_velocity_components",
+        2: "angular_velocity_magnitude",
+        3: "magnetic_disturbance_torque",
+        4: "gravity_gradient_torque",
+        5: "aerodynamic_disturbance_torque",
+        6: "magnetorquer_magnetic_moment",
+        7: "z_axis_vs_velocity",
+        8: "x_axis_vs_nadir"
+    }
+
+    for fig_num, fig_name in figure_names.items():
+
+        fig = plt.figure(fig_num)
+
+        save_path = Path(output_dir) / f"{fig_name}.png"
+
+        fig.savefig(
+            save_path,
+            dpi=300,
+            bbox_inches="tight"
+        )
+
+        print(f"Saved figure: {save_path}")
+
+    plt.show()
+
+    return figureList

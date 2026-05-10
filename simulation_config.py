@@ -34,6 +34,13 @@ from Basilisk.utilities import (
     orbitalMotion,
     RigidBodyKinematics as rbk,
 )
+
+# ==========================================================
+# OUTPUT DIRECTORY
+# ==========================================================
+
+OUTPUT_FOLDER_NAME = "Run_01"
+
 # ==========================================================
 # TIMING
 # ==========================================================
@@ -41,6 +48,23 @@ from Basilisk.utilities import (
 SIMULATION_TIME_S = 5400
 
 DYN_DT_S = 0.05
+
+# ==========================================================
+# LOGGING
+# ==========================================================
+
+# Engineering-analysis logging cadence.
+#
+# 54 sec ≈ 1% of a 90-minute orbit.
+#
+# IMPORTANT:
+# This affects ONLY:
+# - CSV export
+# - plots
+# - logged recorder samples
+#
+# Dynamics and FSW still run at full resolution.
+LOGGING_DT_S = 54.0
 
 # ==========================================================
 # ORBIT
@@ -381,9 +405,11 @@ __all__ = [
     # TIMING
     # ======================================================
 
+    "OUTPUT_FOLDER_NAME",
     "SIMULATION_TIME_S",
 
     "DYN_DT_S",
+    "LOGGING_DT_S",
 
     # ======================================================
     # ORBIT
