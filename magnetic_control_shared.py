@@ -55,12 +55,6 @@ def saturate_dipole_uniform(m, max_dipole):
 
     max_dipole = np.asarray(max_dipole, dtype=float).reshape(3)
 
-    if (
-        not np.all(np.isfinite(m))
-        or not np.all(np.isfinite(max_dipole))
-    ):
-        return np.zeros(3, dtype=float)
-
     ratios = np.divide(
         np.abs(m),
         max_dipole,
@@ -72,8 +66,5 @@ def saturate_dipole_uniform(m, max_dipole):
 
     if max_ratio > 1.0:
         m = m / max_ratio
-
-    if not np.all(np.isfinite(m)):
-        return np.zeros(3, dtype=float)
 
     return m

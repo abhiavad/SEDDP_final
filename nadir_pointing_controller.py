@@ -133,8 +133,6 @@ class NadirPointingController(sysModel.SysModel):
 
         if (
             B_norm_sq < 1e-12
-            or not np.all(np.isfinite(B))
-            or not np.all(np.isfinite(nadir_B))
         ):
 
             m = np.zeros(3)
@@ -264,12 +262,6 @@ class NadirPointingController(sysModel.SysModel):
                         tau_cmd
                     ) / B_norm_sq
 
-        # --------------------------
-        # Final validation
-        # --------------------------
-
-        if not np.all(np.isfinite(m)):
-            m = np.zeros(3)
 
         # --------------------------
         # Output

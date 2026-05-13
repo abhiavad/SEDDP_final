@@ -40,9 +40,6 @@ class DipoleSelector(sysModel.SysModel):
 
             m_bdot = np.asarray(msg.dipole_B, dtype=float ).reshape(3)
 
-            if not np.all(np.isfinite(m_bdot)):
-                m_bdot = np.zeros(3)
-
         # --------------------------------------
         # Mode-dependent dipole selection
         # --------------------------------------
@@ -65,14 +62,9 @@ class DipoleSelector(sysModel.SysModel):
                 msg = self.nadirDipoleInMsg()
 
                 m_nadir = np.asarray(msg.dipole_B, dtype=float ).reshape(3)
-                if not np.all(np.isfinite(m_nadir)):
-                    m_nadir = np.zeros(3)
                     
             m_total = m_bdot + m_nadir
-
-        if not np.all(np.isfinite(m_total)):
-            m_total = np.zeros(3)
-
+      
         payload = messaging.DipoleRequestBodyMsgPayload()
         payload.dipole_B = m_total.tolist()
         payload.timeTag = timeTag

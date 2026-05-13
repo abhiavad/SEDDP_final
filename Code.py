@@ -329,14 +329,14 @@ def run():
     dipoleConditioner = DipoleConditioner()
     scSim.AddModelToTask(fswCoreTask, dipoleConditioner)
 
-    dipoleMappingObj = dipoleMapping.dipoleMapping()
-    scSim.AddModelToTask(fswCoreTask, dipoleMappingObj)
-
     quantizerObj = DipoleQuantizer(
         step_percentage=DIPOLE_QUANTIZATION_STEP,
         max_dipole=maxDipole
     )
     scSim.AddModelToTask(fswCoreTask, quantizerObj)
+
+    dipoleMappingObj = dipoleMapping.dipoleMapping()
+    scSim.AddModelToTask(fswCoreTask, dipoleMappingObj)
 
     # =====================================================
     # LOGGING
@@ -362,12 +362,69 @@ def run():
     )
     scSim.AddModelToTask(dynTaskName, aeroTorqueLog)
 
+    # # =====================================================
+    # # MAGNETIC FIELD LOGGING
+    # # =====================================================
+
+    # # True magnetic field from environment model
+    # magFieldLog = magModule.envOutMsgs[0].recorder(
+    #     loggingSamplingTime
+    # )
+    # scSim.AddModelToTask(dynTaskName, magFieldLog)
+
+    # # Magnetometer sensor output
+    # tamLog = TAM.tamDataOutMsg.recorder(
+    #     loggingSamplingTime
+    # )
+    # scSim.AddModelToTask(dynTaskName, tamLog)
+
     # =====================================================
     # FSW LOGGING
     # =====================================================
 
-    # mtbDipoleCmdsLog = quantizerObj.mtbCmdOutMsg.recorder(fswStepTime)
+    # mtbDipoleCmdsLog = dipoleMappingObj.dipoleRequestMtbOutMsg.recorder(fswStepTime)
     # scSim.AddModelToTask(fswCoreTask, mtbDipoleCmdsLog)
+
+
+    # modePhaseLog = modeScheduler.modeOutMsg.recorder(
+    #     fswStepTime
+    # )
+    # scSim.AddModelToTask(
+    #     fswCoreTask,
+    #     modePhaseLog
+    # )
+
+    # modeTypeLog = modeScheduler.modeTypeOutMsg.recorder(
+    #     fswStepTime
+    # )
+    # scSim.AddModelToTask(
+    #     fswCoreTask,
+    #     modeTypeLog
+    # )
+
+    # actuateLog = modeScheduler.actuateOutMsg.recorder(
+    #     fswStepTime
+    # )
+    # scSim.AddModelToTask(
+    #     fswCoreTask,
+    #     actuateLog
+    # )
+
+    # bdotLog = bdotPredictor.bdotOutMsg.recorder(
+    # fswStepTime
+    # )
+    # scSim.AddModelToTask(
+    #     fswCoreTask,
+    #     bdotLog
+    # )
+
+    # BpredictorLog = bdotPredictor.bOutMsg.recorder(
+    #     fswStepTime
+    # )
+    # scSim.AddModelToTask(
+    #     fswCoreTask,
+    #     BpredictorLog
+    # )
     
     # =====================================================
     # ORBIT DEFINITION
@@ -623,7 +680,7 @@ def run():
     )
 
     nadirController.bInMsg.subscribeTo(
-        tamCommObj.tamOutMsg
+        bdotPredictor.bOutMsg
     )
 
 
@@ -663,13 +720,21 @@ def run():
         )
 
     dipoleConditioner.dipoleInMsg.subscribeTo(
-        dipoleSelector.dipoleOutMsg
+    dipoleSelector.dipoleOutMsg
+    )
+
+    # ---------------------------------
+    # Quantization BEFORE dipole mapping
+    # ---------------------------------
+
+    quantizerObj.dipoleInMsg.subscribeTo(
+        dipoleConditioner.dipoleOutMsg
     )
 
     dipoleMappingObj.steeringMatrix = STEERING_MATRIX
 
     dipoleMappingObj.dipoleRequestBodyInMsg.subscribeTo(
-        dipoleConditioner.dipoleOutMsg
+        quantizerObj.dipoleOutMsg
     )
 
     dipoleMappingObj.mtbArrayConfigParamsInMsg.subscribeTo(
@@ -678,15 +743,11 @@ def run():
 
 
     # =====================================================
-    # MTB QUANTIZATION
+    # MTB COMMAND CONNECTION
     # =====================================================
 
-    quantizerObj.mtbCmdInMsg.subscribeTo(
-        dipoleMappingObj.dipoleRequestMtbOutMsg
-    )
-
     mtbEff.mtbCmdInMsg.subscribeTo(
-        quantizerObj.mtbCmdOutMsg
+        dipoleMappingObj.dipoleRequestMtbOutMsg
     )
 
 
@@ -706,12 +767,7 @@ def run():
     times_sec = dataRec.times() * macros.NANO2SEC
 
     times_min = times_sec / 60.0
-    # mtb_times_sec = (
-    #     mtbDipoleCmdsLog.times()
-    #    * macros.NANO2SEC
-    # ) 
-
-    # mtb_times_min = mtb_times_sec / 60.0
+    # mtb_times_sec = (mtbDipoleCmdsLog.times()* macros.NANO2SEC) 
 
     omega = np.array(dataRec.omega_BN_B)
 
@@ -732,8 +788,35 @@ def run():
         aeroTorqueLog.torqueRequestBody
     )
 
+    # trueMagField = np.array(
+    #     magFieldLog.magField_N
+    # )
+
+    # tamMeasurement = np.array(
+    #     tamLog.tam_S
+    # )
+
     # dipole = np.array(
     #     mtbDipoleCmdsLog.mtbDipoleCmds
+    # )
+    # modePhase = np.array(
+    #     modePhaseLog.dataValue
+    # )
+
+    # modeType = np.array(
+    #     modeTypeLog.dataValue
+    # )
+
+    # actuateFlag = np.array(
+    #     actuateLog.dataValue
+    # )
+
+    # Bdot_logged = np.array(
+    #     bdotLog.rHat_XB_B
+    # )
+
+    # B_logged = np.array(
+    #     BpredictorLog.tam_B
     # )
 
     posData = np.array(dataRec.r_BN_N)
@@ -741,6 +824,13 @@ def run():
     velData = np.array(dataRec.v_BN_N)
 
     sigmaData = np.array(dataRec.sigma_BN)
+    # trueMagField_B = np.zeros_like(trueMagField)
+
+    # for i in range(len(times_sec)):
+
+    #     C_BN = rbk.MRP2C(sigmaData[i])
+
+    #     trueMagField_B[i] = C_BN @ trueMagField[i]
 
     # =====================================================
     # POINTING ANGLES
@@ -957,7 +1047,153 @@ def run():
         print(
             f"CSV output: {csv_path}"
         )
+    # # =====================================================
+    # # MTB COMMAND CSV EXPORT
+    # # =====================================================
 
+    # mtb_data = np.column_stack((
+
+    #     mtb_times_sec,
+
+    #     modePhase,
+    #     modeType,
+    #     actuateFlag,
+
+    #     B_logged[:,0],
+    #     B_logged[:,1],
+    #     B_logged[:,2],
+
+    #     Bdot_logged[:,0],
+    #     Bdot_logged[:,1],
+    #     Bdot_logged[:,2],
+
+    #     dipole[:,0],
+    #     dipole[:,1],
+    #     dipole[:,2]
+    # ))
+
+    # mtb_csv_metadata = f"""# =====================================================
+    # # Magnetorquer Command Log
+    # # =====================================================
+    # #
+    # # Simulation File:
+    # # {fileName}
+    # #
+    # # Active Controller:
+    # # {ACTIVE_CONTROLLER}
+    # #
+    # # FSW Timestep [s]:
+    # # {FSW_STEP_TIME_S}
+    # #
+    # # Number of Logged Samples:
+    # # {len(mtb_times_sec)}
+    # #
+    # # =====================================================
+    # # COLUMN DESCRIPTIONS
+    # # =====================================================
+    # #
+    # # time_sec
+    # #     Simulation time [sec]
+    # #
+    # # mode_phase
+    # #     Scheduler phase
+    # #     1 = sensing
+    # #     2 = actuation
+    # #
+    # # controller_type
+    # #     Active controller type
+    # #     0 = BDOT
+    # #     1 = NADIR_POINTING
+    # #
+    # # actuate_flag
+    # #     Actuation enable flag
+    # #     0 = disabled
+    # #     1 = enabled
+    # #
+    # # B_x_T
+    # # B_y_T
+    # # B_z_T
+    # #     Magnetic field vector in body frame [T]
+    # #
+    # # Bdot_x_Tps
+    # # Bdot_y_Tps
+    # # Bdot_z_Tps
+    # #     Estimated magnetic field derivative [T/s]
+    # #
+    # # mtb_x_Am2
+    # # mtb_y_Am2
+    # # mtb_z_Am2
+    # #     Commanded magnetorquer dipole moments [A·m²]
+    # #
+    # # =====================================================
+    # """
+
+    # mtb_csv_columns = ",".join([
+
+    #     "time_sec",
+
+    #     "mode_phase",
+    #     "controller_type",
+    # "actuate_flag",
+
+    # "B_x_T",
+    # "B_y_T",
+    # "B_z_T",
+
+    # "Bdot_x_Tps",
+    # "Bdot_y_Tps",
+    # "Bdot_z_Tps",
+
+    # "mtb_x_Am2",
+    # "mtb_y_Am2",
+    # "mtb_z_Am2"
+    # ])
+
+    # mtb_csv_path = OUTPUT_DIR / "mtb_log.csv"
+
+    # with open(mtb_csv_path, "w") as f:
+
+    #     # Metadata block
+    #     f.write(mtb_csv_metadata)
+
+    #     # Column names
+    #     f.write(mtb_csv_columns + "\n")
+
+    #     # Numeric data
+    #     np.savetxt(
+    #         f,
+    #         mtb_data,
+    #         delimiter=",",
+    #         fmt="%.6e"
+    #     )
+
+    # print(
+    #     f"Saved MTB log with {len(mtb_times_sec)} samples"
+    # )
+
+    # print(
+    #     f"MTB CSV output: {mtb_csv_path}"
+    # )
+
+    # print(
+    #     "Unique phase values:",
+    #     np.unique(modePhase)
+    # )
+
+    # print(
+    #     "Unique controller values:",
+    #     np.unique(modeType)
+    # )
+
+    # print(
+    #     "Unique actuate values:",
+    #     np.unique(actuateFlag)
+    # )
+
+    # print(
+    #     "Maximum MTB magnitude:",
+    #     np.max(np.abs(dipole))
+    # )
 
     # =====================================================
     # PLOTTING
@@ -966,7 +1202,7 @@ def run():
     figureList = plotOrbits(
 
         times_min,
-        #mtb_times_min,
+        # mtb_times_sec,
 
         omega,
         omega_mag,
@@ -975,7 +1211,10 @@ def run():
         ggTorque,
         aeroTorqueVec,
 
-        #dipole,
+        # dipole,
+
+        # trueMagField_B,
+        # tamMeasurement,
 
         angle_z_vel_deg,
         angle_x_nadir_deg,

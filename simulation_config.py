@@ -29,6 +29,7 @@ FRAME CONVENTION
 - Total spacecraft CG is computed in mass_properties.py.
 """
 import numpy as np
+from fsw_config import FSW_STEP_TIME_S
 
 from Basilisk.utilities import (
     orbitalMotion,
@@ -45,9 +46,18 @@ OUTPUT_FOLDER_NAME = "Run_01"
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 1000
+SIMULATION_TIME_S = 5400*3
 
-DYN_DT_S = 0.09
+# ==========================================================
+# Dynamics timestep
+#
+# Must be an integer subdivision of the FSW timestep.
+# Using 2x faster dynamics updates ensures the TAM sensor
+# updates multiple times during each FSW sensing interval,
+# preventing repeated B samples and zero Bdot estimates.
+# ==========================================================
+
+DYN_DT_S = FSW_STEP_TIME_S / 2.0
 
 # ==========================================================
 # LOGGING
@@ -64,7 +74,7 @@ DYN_DT_S = 0.09
 # - logged recorder samples
 #
 # Dynamics and FSW still run at full resolution.
-LOGGING_DT_S = 270
+LOGGING_DT_S = 54
 
 # ==========================================================
 # ORBIT
@@ -114,12 +124,12 @@ A body-frame perturbation rotation is then applied.
 # ----------------------------------------------------------
 
 INITIAL_PERTURBATION_AXIS_B = np.array([
-    0.0,
-    0.0,
+    1.0,
+    1.0,
     1.0,
 ])
 
-INITIAL_PERTURBATION_ANGLE_DEG = 180.0
+INITIAL_PERTURBATION_ANGLE_DEG = 135.0
 
 # ----------------------------------------------------------
 # ORBITAL STATE
@@ -273,7 +283,7 @@ if not np.all(np.isfinite(INITIAL_SIGMA_BN)):
     )
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [3.14159, 3.14159, 3.14159]
+INITIAL_OMEGA_BN_B_RADPS = [0.1, 0.1, 0.1]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]

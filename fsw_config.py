@@ -68,7 +68,7 @@ FSW_CONTROL_LOOP_DT_S = 0.18
 # Supported modes:
 #   "BDOT"
 #   "NADIR_POINTING"
-ACTIVE_CONTROLLER = "BDOT"
+ACTIVE_CONTROLLER = "NADIR_POINTING"
 
 # ==========================================================
 # CONTROLLER GAINS
