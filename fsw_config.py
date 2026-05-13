@@ -120,7 +120,7 @@ OMEGA_DEADBAND_RADPS = 1e-4
 #
 # Initially kept at zero during
 # architecture validation.
-KP_NADIR = 7.5e-4
+KP_NADIR = 7.5e-4 #7.5e-4 for 600 km, 0.00025 for 300 km
 
 # ----------------------------------------------------------
 # RECOVERY MODE THRESHOLDS
