@@ -36,7 +36,7 @@ class HorizonComm(sysModel.SysModel):
         payload = messaging.BodyHeadingMsgPayload()
         payload.rHat_XB_B = nadir_B.tolist()
         # --- TIMESTAMP HANDLING ---
-        # Use sensor timestamp if available, else fallback to current time
+        # Use scheduler-consistent simulation timestamp
         payload.timeTag = CurrentSimNanos
 
         self.nadirOutMsg.write(payload, CurrentSimNanos)

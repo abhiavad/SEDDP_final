@@ -109,6 +109,7 @@ from horizon_sensor import HorizonSensor
 from horizon_comm import HorizonComm
 from mode_scheduler import ModeScheduler
 from bdot_predictor import BdotPredictor
+from nadir_predictor import NadirPredictor
 from bdot_controller import BdotController
 from dipoleselector import DipoleSelector
 from Dipole_quantizer import DipoleQuantizer
@@ -295,6 +296,9 @@ def run():
 
     bdotPredictor = BdotPredictor()
     scSim.AddModelToTask(fswCoreTask, bdotPredictor)
+
+    nadirPredictor = NadirPredictor()
+    scSim.AddModelToTask(fswCoreTask, nadirPredictor)
 
 
     # ---------------------------------
@@ -646,7 +650,6 @@ def run():
         modeScheduler.modeOutMsg
     )
 
-
     # =====================================================
     # BDOT CONTROLLER
     # =====================================================
@@ -666,7 +669,16 @@ def run():
     bdotController.actuateInMsg.subscribeTo(
         modeScheduler.actuateOutMsg
     )
+    # =====================================================
+    # NADIR PREDICTOR
+    # =====================================================
+    nadirPredictor.nadirInMsg.subscribeTo(
+        horizonCommObj.nadirOutMsg
+    )
 
+    nadirPredictor.modeInMsg.subscribeTo(
+        modeScheduler.modeOutMsg
+    )
     # =====================================================
     # NADIR CONTROLLER
     # =====================================================
@@ -676,7 +688,7 @@ def run():
     )
 
     nadirController.nadirInMsg.subscribeTo(
-        horizonCommObj.nadirOutMsg
+        nadirPredictor.nadirOutMsg
     )
 
     nadirController.bInMsg.subscribeTo(

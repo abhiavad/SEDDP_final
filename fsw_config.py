@@ -57,7 +57,7 @@ Therefore:
 """
 
 # Total sensing + actuation cycle duration [s]
-FSW_CONTROL_LOOP_DT_S = 0.18
+FSW_CONTROL_LOOP_DT_S = 0.96
 
 
 # ==========================================================
@@ -110,7 +110,7 @@ OMEGA_DEADBAND_RADPS = 1e-4
 #
 # Initially kept at zero during
 # architecture validation.
-KP_NADIR = 0.00025
+KP_NADIR = 2.0e-3
 
 # ----------------------------------------------------------
 # RECOVERY MODE THRESHOLDS
