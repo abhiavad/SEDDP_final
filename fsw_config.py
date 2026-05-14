@@ -63,15 +63,18 @@ Therefore:
     FSW_STEP_TIME_S
         = FSW_CONTROL_LOOP_DT_S / (2 * NS)
 """
+
+BDOT_FSW_CONTROL_LOOP_DT_S = 0.18
+NADIR_FSW_CONTROL_LOOP_DT_S = 0.96
 # Total sensing + actuation cycle duration [s]
 
 if ACTIVE_CONTROLLER == "BDOT":
 
-    FSW_CONTROL_LOOP_DT_S = 0.18
+    FSW_CONTROL_LOOP_DT_S = BDOT_FSW_CONTROL_LOOP_DT_S
 
 elif ACTIVE_CONTROLLER == "NADIR_POINTING":
 
-    FSW_CONTROL_LOOP_DT_S = 0.96
+    FSW_CONTROL_LOOP_DT_S = NADIR_FSW_CONTROL_LOOP_DT_S
 
 else:
 
@@ -97,7 +100,7 @@ BDOT_GAIN = 0.00625
 # Currently intentionally identical to BDOT_GAIN
 # so that Phase A architecture preparation does
 # NOT change existing behavior.
-BDOT_GAIN_NADIR = BDOT_GAIN
+BDOT_GAIN_NADIR = BDOT_GAIN * (NADIR_FSW_CONTROL_LOOP_DT_S/BDOT_FSW_CONTROL_LOOP_DT_S)
 
 # Ignore extremely small estimated angular rates
 OMEGA_DEADBAND_RADPS = 1e-4
@@ -120,7 +123,7 @@ OMEGA_DEADBAND_RADPS = 1e-4
 #
 # Initially kept at zero during
 # architecture validation.
-KP_NADIR = 7.5e-4 #7.5e-4 for 600 km, 0.00025 for 300 km
+KP_NADIR = 0.00025 #7.5e-4 for 600 km, 0.00025 for 300 km
 
 # ----------------------------------------------------------
 # RECOVERY MODE THRESHOLDS

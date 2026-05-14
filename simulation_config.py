@@ -40,13 +40,13 @@ from Basilisk.utilities import (
 # OUTPUT DIRECTORY
 # ==========================================================
 
-OUTPUT_FOLDER_NAME = "Run_01"
+OUTPUT_FOLDER_NAME = "600_nadir_3orbits_135degsolarpanel"
 
 # ==========================================================
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 8640*3
+SIMULATION_TIME_S = 86400*0.5
 
 # ==========================================================
 # Dynamics timestep
@@ -97,7 +97,7 @@ ATMOSPHERE_PLANET_RADIUS_M = 6378137.0
 
 ATMOSPHERE_BASE_DENSITY_KG_M3 = 4.39e-11  # 4.39e-11 (300km) , 1.05e-12 (550km) , 5.63e-13 (600km)
 
-ATMOSPHERE_SCALE_HEIGHT_M = 300000.0 # 300000 (300km), 550000 (550km), 600000 (600km)
+ATMOSPHERE_SCALE_HEIGHT_M = 300000.0 # 300000.0 (300km), 550000.0 (550km), 600000.0 (600km)
 
 ATMOSPHERE_ENV_MIN_REACH_M = -200000.0
 
@@ -326,10 +326,10 @@ LZ_M = 0.17
 LP_M = 0.15
 
 # ----------------------------------------------------------
-# PANEL DEPLOYMENT ANGLE [deg]
+# PANEL DEPLOYMENT ANGLE [deg] 
 # ----------------------------------------------------------
 
-THETA_PANEL_DEG = 180.0
+THETA_PANEL_DEG = 180.0 #90 deg to 180 deg
 
 # ==========================================================
 # SPACECRAFT MASS PROPERTIES
