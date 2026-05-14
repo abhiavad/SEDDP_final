@@ -8,7 +8,7 @@ from pathlib import Path
 def plotOrbits(
 
     time_min,
-    # mtb_times_min,
+    # mtb_times_sec,
 
     omega,
     omega_mag,
@@ -18,6 +18,9 @@ def plotOrbits(
     aeroTorque,
 
     # dipole,
+
+    # trueMagField_B,
+    # tamMeasurement,
 
     angle_z_vel_deg,
     angle_x_nadir_deg,
@@ -45,13 +48,13 @@ def plotOrbits(
     for i in range(3):
 
         plt.plot(
-            time_min,
-            omega[:, i],
-            color=unitTestSupport.getLineColor(i, 3),
-            linewidth=2.0,
-            label=f"$\\omega_{{B/N,{labels[i]}}}$"
+            time_min, 
+            omega[:, i], 
+            color=unitTestSupport.getLineColor(i, 3), 
+            linewidth=2.0, 
+            label=f"$\\omega_{{B/N,{labels[i]}}}$" 
         )
-
+    
     plt.title(
         "Body Angular Velocity Components",
         fontsize=14
@@ -233,16 +236,16 @@ def plotOrbits(
 
     figureList[fileName + "5"] = plt.figure(5)
 
-    # =====================================================
-    # MAGNETORQUER MAGNETIC MOMENT
-    # =====================================================
+    # # =====================================================
+    # # MAGNETORQUER MAGNETIC MOMENT
+    # # =====================================================
 
     # plt.figure(6)
 
     # for i in range(3):
 
     #     plt.plot(
-    #         mtb_times_min,
+    #         mtb_times_sec,
     #         dipole[:, i],
     #         linewidth=2.0,
     #         label=f"$m_{{MTB,{labels[i]}}}$"
@@ -254,7 +257,7 @@ def plotOrbits(
     # )
 
     # plt.xlabel(
-    #     "Time [min]",
+    #     "Time [sec]",
     #     fontsize=12
     # )
 
@@ -337,6 +340,92 @@ def plotOrbits(
 
     figureList[fileName + "8"] = plt.figure(8)
 
+
+    # # =====================================================
+    # # TRUE MAGNETIC FIELD IN BODY FRAME
+    # # =====================================================
+
+    # plt.figure(9)
+
+    # for i in range(3):
+
+    #     plt.plot(
+    #         time_min,
+    #         trueMagField_B[:, i],
+    #         linewidth=2.0,
+    #         label=f"$B_{{true,{labels[i]}}}$"
+    #     )
+
+    # plt.title(
+    #     "True Magnetic Field in Body Frame",
+    #     fontsize=14
+    # )
+
+    # plt.xlabel(
+    #     "Time [min]",
+    #     fontsize=12
+    # )
+
+    # plt.ylabel(
+    #     "Magnetic Field [T]",
+    #     fontsize=12
+    # )
+
+    # plt.legend(loc="best")
+
+    # plt.ticklabel_format(
+    #     axis="y",
+    #     style="sci",
+    #     scilimits=(0, 0)
+    # )
+
+    # plt.tight_layout()
+
+    # figureList[fileName + "9"] = plt.figure(9)
+
+
+    # # =====================================================
+    # # MAGNETOMETER MEASUREMENT
+    # # =====================================================
+
+    # plt.figure(10)
+
+    # for i in range(3):
+
+    #     plt.plot(
+    #         time_min,
+    #         tamMeasurement[:, i],
+    #         linewidth=2.0,
+    #         label=f"$B_{{meas,{labels[i]}}}$"
+    #     )
+
+    # plt.title(
+    #     "Magnetometer Measurement",
+    #     fontsize=14
+    # )
+
+    # plt.xlabel(
+    #     "Time [min]",
+    #     fontsize=12
+    # )
+
+    # plt.ylabel(
+    #     "Magnetic Field [T]",
+    #     fontsize=12
+    # )
+
+    # plt.legend(loc="best")
+
+    # plt.ticklabel_format(
+    #     axis="y",
+    #     style="sci",
+    #     scilimits=(0, 0)
+    # )
+
+    # plt.tight_layout()
+
+    # figureList[fileName + "10"] = plt.figure(10)
+
     # =====================================================
     # SAVE FIGURES
     # =====================================================
@@ -350,7 +439,9 @@ def plotOrbits(
         5: "aerodynamic_disturbance_torque",
         # 6: "magnetorquer_magnetic_moment",
         7: "z_axis_vs_velocity",
-        8: "x_axis_vs_nadir"
+        8: "x_axis_vs_nadir",
+        # 9: "true_magnetic_field_body_frame",
+        # 10: "magnetometer_measurement"
     }
 
     for fig_num, fig_name in figure_names.items():

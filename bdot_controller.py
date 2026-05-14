@@ -51,16 +51,6 @@ class BdotController(sysModel.SysModel):
             return
 
         # --------------------------
-        # Validate inputs
-        # --------------------------
-        if not self.bInMsg.isWritten() or not self.bdotInMsg.isWritten():
-            write_zero_dipole(
-                self.cmdDipoleOutMsg,
-                CurrentSimNanos
-            )
-            return
-
-        # --------------------------
         # Read messages
         # --------------------------
         bMsg = self.bInMsg()
@@ -75,30 +65,32 @@ class BdotController(sysModel.SysModel):
         # --------------------------
         # Control law
         # --------------------------
-        if (
-            B_norm_sq < 1e-12
-            or not np.all(np.isfinite(B))
-            or not np.all(np.isfinite(Bdot))
-        ):
+
+        if B_norm_sq < 1e-12:
             m = np.zeros(3)
+
         else:
-            omega_perp = -np.cross(B, Bdot) / B_norm_sq
 
-            if not np.all(np.isfinite(omega_perp)):
-                omega_perp = np.zeros(3)
+            B_norm = np.sqrt(B_norm_sq)
 
-            if np.all(np.abs(omega_perp) <= OMEGA_DEADBAND_RADPS):
-                m = np.zeros(3)
-            
-            else:
+            B_hat = B / B_norm
 
-                L_perp = self.I @ omega_perp
+            S_Bhat = np.array([
+                [0.0,         -B_hat[2],  B_hat[1]],
+                [B_hat[2],     0.0,      -B_hat[0]],
+                [-B_hat[1],    B_hat[0],  0.0]
+            ])
 
-                m = -self.gain * np.cross(B, L_perp) / B_norm_sq
+            tmp1 = S_Bhat @ Bdot
+
+            tmp2 = self.I @ tmp1
+
+            m = (
+                self.gain
+                * (S_Bhat @ tmp2)
+                / B_norm_sq
+            )
                 
-
-        if not np.all(np.isfinite(m)):
-            m = np.zeros(3)
         # --------------------------
         # Output
         # --------------------------

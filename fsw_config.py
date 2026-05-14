@@ -12,13 +12,21 @@ Single source of truth for:
 import math
 
 # ==========================================================
-# TIMING (FROM adcs_config.FSW_CONFIG)
+# CONTROLLER SELECTION
 # ==========================================================
+
+# Active flight-control mode.
+#
+# Supported modes:
+#   "BDOT"
+#   "NADIR_POINTING"
+
+ACTIVE_CONTROLLER = "NADIR_POINTING"
+
 
 # ==========================================================
 # FSW CONTROL LOOP TIMING
 # ==========================================================
-
 """
 CONTROL ARCHITECTURE
 --------------------
@@ -55,20 +63,22 @@ Therefore:
     FSW_STEP_TIME_S
         = FSW_CONTROL_LOOP_DT_S / (2 * NS)
 """
-
 # Total sensing + actuation cycle duration [s]
-FSW_CONTROL_LOOP_DT_S = 0.18
 
+if ACTIVE_CONTROLLER == "BDOT":
 
-# ==========================================================
-# CONTROLLER SELECTION
-# ==========================================================
-# Active flight-control mode.
-#
-# Supported modes:
-#   "BDOT"
-#   "NADIR_POINTING"
-ACTIVE_CONTROLLER = "BDOT"
+    FSW_CONTROL_LOOP_DT_S = 0.18
+
+elif ACTIVE_CONTROLLER == "NADIR_POINTING":
+
+    FSW_CONTROL_LOOP_DT_S = 0.96
+
+else:
+
+    raise ValueError(
+        f"Unsupported ACTIVE_CONTROLLER: {ACTIVE_CONTROLLER}"
+    )
+
 
 # ==========================================================
 # CONTROLLER GAINS
@@ -110,7 +120,7 @@ OMEGA_DEADBAND_RADPS = 1e-4
 #
 # Initially kept at zero during
 # architecture validation.
-KP_NADIR = 0.00025
+KP_NADIR = 7.5e-4 #7.5e-4 for 600 km, 0.00025 for 300 km
 
 # ----------------------------------------------------------
 # RECOVERY MODE THRESHOLDS

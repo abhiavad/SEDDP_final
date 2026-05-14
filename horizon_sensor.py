@@ -47,9 +47,9 @@ class HorizonSensor(sysModel.SysModel):
         r_norm = np.linalg.norm(r_N)
 
         if r_norm < 1e-10:
-            nadir_N = np.zeros(3, dtype=float)
-        else:
-            nadir_N = -r_N / r_norm
+            return
+
+        nadir_N = -r_N / r_norm
 
         C_BN = rbk.MRP2C(sigma_BN)
         nadir_B = (C_BN @ nadir_N).flatten()
@@ -67,14 +67,14 @@ class HorizonSensor(sysModel.SysModel):
             # Rotate true vector into noisy measurement
             nadir_B = C_err @ nadir_B
             if not np.all(np.isfinite(nadir_B)):
-                nadir_B = np.zeros(3, dtype=float)
+                return
 
         # Final normalization to ensure it remains a valid unit direction vector
         norm = np.linalg.norm(nadir_B)
-        if norm > 1e-10:
-            nadir_B = nadir_B / norm
-        else:
-            nadir_B = np.zeros(3, dtype=float)
+        if norm < 1e-10:
+            return
+
+        nadir_B = nadir_B / norm
 
         payload = messaging.BodyHeadingMsgPayload()
         payload.rHat_XB_B = nadir_B.tolist() 

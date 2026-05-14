@@ -104,8 +104,6 @@ class DipoleConditioner(sysModel.SysModel):
 
         # shared saturation
         m = saturate_dipole_uniform(m, self.max_dipole)
-        if not np.all(np.isfinite(m)):
-            m = np.zeros(3, dtype=float)
         # --------------------------------------------------
         # Output
         # --------------------------------------------------
