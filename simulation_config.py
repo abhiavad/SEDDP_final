@@ -47,7 +47,7 @@ from Basilisk.utilities import (
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 0.5*86400
+SIMULATION_TIME_S = 0.1*86400.0
 
 # ==========================================================
 # Dynamics timestep
@@ -75,7 +75,7 @@ DYN_DT_S = FSW_STEP_TIME_S / 2.0
 # - logged recorder samples
 #
 # Dynamics and FSW still run at full resolution.
-LOGGING_DT_S = 54
+LOGGING_DT_S = SIMULATION_TIME_S*0.01
 
 # ==========================================================
 # ORBIT
@@ -284,7 +284,7 @@ if not np.all(np.isfinite(INITIAL_SIGMA_BN)):
     )
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [0.025, 0.025, 0.025]
+INITIAL_OMEGA_BN_B_RADPS = [0.5,0.5, 0.5]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]

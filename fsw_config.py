@@ -21,7 +21,7 @@ import math
 #   "BDOT"
 #   "NADIR_POINTING"
 
-ACTIVE_CONTROLLER = "NADIR_POINTING"
+ACTIVE_CONTROLLER = "BDOT"
 
 
 # ==========================================================
@@ -92,7 +92,7 @@ else:
 # ----------------------------------------------------------
 
 # Existing validated detumble gain
-BDOT_GAIN = 0.00625
+BDOT_GAIN = 0.01
 
 # Future nadir-mode damping gain.
 #
@@ -163,7 +163,7 @@ NADIR_POINTING_DEADBAND_DEG = 2.5
 # ==========================================================
 
 # From get_max_dipole()
-MAX_DIPOLE_AM2 = (0.065, 0.065, 0.065)
+MAX_DIPOLE_AM2 = (0.0177, 0.0177, 0.0177)
 
 
 # ==========================================================
