@@ -47,7 +47,7 @@ from Basilisk.utilities import (
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 0.1*86400.0
+SIMULATION_TIME_S = 0.3*86400.0
 
 # ==========================================================
 # Dynamics timestep
@@ -82,9 +82,9 @@ LOGGING_DT_S = SIMULATION_TIME_S*0.01
 # ==========================================================
 
 ORBIT_ELEMENTS = {
-    "a": 6678e3,            # [m] Semi-major axis - 6678e3 (300km), 6928e3 (550km), 6978e3 (600km)
+    "a": 6978e3,            # [m] Semi-major axis - 6678e3 (300km), 6928e3 (550km), 6978e3 (600km)
     "e": 0.0,               # [-] Eccentricity
-    "i_deg": 96.6725,       # [deg] Inclination - 96.6725 deg (300km), 97.67 deg (550km), 97.7882 deg (600km)
+    "i_deg": 97.7882,       # [deg] Inclination - 96.6725 deg (300km), 97.67 deg (550km), 97.7882 deg (600km)
     "Omega_deg": 48.2,      # [deg] RAAN (Right Ascension of Ascending Node)
     "omega_deg": 347.8,     # [deg] Argument of Periapsis (AoP)
     "f_deg": 85.3           # [deg] True Anomaly
@@ -96,9 +96,9 @@ ORBIT_ELEMENTS = {
 
 ATMOSPHERE_PLANET_RADIUS_M = 6378137.0
 
-ATMOSPHERE_BASE_DENSITY_KG_M3 = 4.39e-11  # 4.39e-11 (300km) , 1.05e-12 (550km) , 5.63e-13 (600km)
+ATMOSPHERE_BASE_DENSITY_KG_M3 = 5.63e-13  # 4.39e-11 (300km) , 1.05e-12 (550km) , 5.63e-13 (600km)
 
-ATMOSPHERE_SCALE_HEIGHT_M = 300000.0 # 300000.0 (300km), 550000.0 (550km), 600000.0 (600km)
+ATMOSPHERE_SCALE_HEIGHT_M = 600000.0 # 300000.0 (300km), 550000.0 (550km), 600000.0 (600km)
 
 ATMOSPHERE_ENV_MIN_REACH_M = -200000.0
 
@@ -284,7 +284,7 @@ if not np.all(np.isfinite(INITIAL_SIGMA_BN)):
     )
 
 # [rad/s]
-INITIAL_OMEGA_BN_B_RADPS = [0.5,0.5, 0.5]
+INITIAL_OMEGA_BN_B_RADPS = [3.14159,3.14159, 3.14159]
 
 # [A*m^2]
 RESIDUAL_DIPOLE_B_AM2 = [0.001, 0.001, 0.001]
