@@ -100,10 +100,10 @@ BDOT_GAIN = 0.00625
 # Currently intentionally identical to BDOT_GAIN
 # so that Phase A architecture preparation does
 # NOT change existing behavior.
-BDOT_GAIN_NADIR = BDOT_GAIN * (NADIR_FSW_CONTROL_LOOP_DT_S/BDOT_FSW_CONTROL_LOOP_DT_S)
+BDOT_GAIN_NADIR = 0.0036697 #BDOT_GAIN * (NADIR_FSW_CONTROL_LOOP_DT_S/BDOT_FSW_CONTROL_LOOP_DT_S)
 
 # Ignore extremely small estimated angular rates
-OMEGA_DEADBAND_RADPS = 1e-4
+OMEGA_DEADBAND_RADPS = 1e-3
 
 
 # ----------------------------------------------------------
@@ -123,12 +123,11 @@ OMEGA_DEADBAND_RADPS = 1e-4
 #
 # Initially kept at zero during
 # architecture validation.
-KP_NADIR = 0.00025 #7.5e-4 for 600 km, 0.00025 for 300 km
+KP_NADIR = 0.0076453 #0.069446 #1.375e-3 #7.5e-4 for 600 km, 0.00025 for 300 km
 
 # ----------------------------------------------------------
 # RECOVERY MODE THRESHOLDS
 # ----------------------------------------------------------
-
 """
 Recovery-mode hysteresis thresholds.
 
@@ -157,7 +156,7 @@ RECOVERY_EXIT_ANGLE_DEG = 85.0
 
 # No nadir-pointing torque applied if:
 # angle(+X, nadir) is below this threshold.
-NADIR_POINTING_DEADBAND_DEG = 5.0
+NADIR_POINTING_DEADBAND_DEG = 2.5
 
 # ==========================================================
 # ACTUATOR LIMITS
@@ -353,6 +352,7 @@ __all__ = [
     "KP_NADIR",
     "RECOVERY_ENTER_ANGLE_DEG",
     "RECOVERY_EXIT_ANGLE_DEG",
+    "NADIR_POINTING_DEADBAND_DEG",
     "MAX_DIPOLE_AM2",
     "NS",
     "NA",

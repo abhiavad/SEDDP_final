@@ -6,7 +6,8 @@ from magnetic_control_shared import (
 )
 
 from fsw_config import (
-    OMEGA_DEADBAND_RADPS
+    OMEGA_DEADBAND_RADPS,
+    TOTAL_ACTUATION_TIME
 )
 
 class BdotController(sysModel.SysModel):
@@ -90,6 +91,7 @@ class BdotController(sysModel.SysModel):
                 * (S_Bhat @ tmp2)
                 / B_norm_sq
             )
+            m /= TOTAL_ACTUATION_TIME
                 
         # --------------------------
         # Output

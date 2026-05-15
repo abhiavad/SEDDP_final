@@ -98,10 +98,7 @@ class DipoleConditioner(sysModel.SysModel):
         # --------------------------------------------------
         # Shared actuator conditioning
         # --------------------------------------------------
-
-        # Time scaling
-        m /= TOTAL_ACTUATION_TIME
-
+    
         # shared saturation
         m = saturate_dipole_uniform(m, self.max_dipole)
         # --------------------------------------------------

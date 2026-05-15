@@ -38,8 +38,6 @@ class NadirPointingController(sysModel.SysModel):
             raise ValueError(
                 "I_matrix must be 3x3"
             )
-
-        self.Iyy = float(self.I[1, 1])
         self.Izz = float(self.I[2, 2])
 
         self.gain = float(baseGain)
@@ -147,11 +145,6 @@ class NadirPointingController(sysModel.SysModel):
                 1.0
             )
 
-            total_angle_error = np.arctan2(
-                np.linalg.norm(nadir_B[1:]),
-                nadir_B[0]
-            )
-
             # ----------------------------------
             # Recovery-mode hysteresis
             # ----------------------------------
@@ -171,77 +164,144 @@ class NadirPointingController(sysModel.SysModel):
             # ----------------------------------
 
             tau_cmd = np.zeros(3)
+            
+
             # ----------------------------------
-            # Angular deadband
+            # RECOVERY MODE
             #
-            # Disable nadir steering if +X
-            # already sufficiently aligned
-            # with nadir.
+            # Only rotate about body Z
+            # until +X faces Earth again.
             # ----------------------------------
 
-            if total_angle_error < self.deadbandAngleRad:
+            if self.inRecoveryMode:
 
-                m = np.zeros(3)
+                # ----------------------------------
+                # Recovery mode:
+                #
+                # Only rotate about +Z/-Z.
+                #
+                # Choose direction that produces
+                # minimum rotation bringing +X
+                # toward nadir.
+                #
+                # Exact 180 deg is singular since
+                # atan2(0, -1) = pi but direction
+                # is undefined.
+                #
+                # Force deterministic escape.
+                # ----------------------------------
+
+                y_component = nadir_B[1]
+
+                # Exact opposite alignment
+                if (
+                    abs(nadir_B[0] + 1.0) < 1e-12
+                    and abs(y_component) < 1e-12
+                ):
+
+                    heading_error = np.pi
+
+                else:
+
+                    heading_error = np.arctan2(
+                        y_component,
+                        nadir_B[0]
+                    )
+
+                tau_cmd[2] = (
+                    self.gain
+                    * self.Izz
+                    * heading_error
+                )
 
             else:
 
                 # ----------------------------------
-                # RECOVERY MODE
+                # Axis-angle geometric error
                 #
-                # Only rotate about body Z
-                # until +X faces Earth again.
+                # Find rotation:
+                #
+                #   theta about e_hat
+                #
+                # that aligns:
+                #
+                #   +X_body -> nadir_B
                 # ----------------------------------
 
-                if self.inRecoveryMode:
+                x_body = np.array([
+                    1.0,
+                    0.0,
+                    0.0
+                ])
 
-                    heading_error = np.arctan2(
-                        nadir_B[1],
-                        nadir_B[0]
-                    )
-
-                    tau_cmd[2] = (
-                        self.gain
-                        * self.Izz
-                        * heading_error
-                    )
-
-                else:
-
-                    y_angle = -np.arctan2(
-                        nadir_B[2],
-                        nadir_B[0]
-                    )
-
-                    z_angle = np.arctan2(
-                        nadir_B[1],
-                        nadir_B[0]
-                    )
-
-                    tau_cmd[1] = (
-                        self.gain
-                        * self.Iyy
-                        * y_angle
-                    )
-
-                    tau_cmd[2] = (
-                        self.gain
-                        * self.Izz
-                        * z_angle
-                    )
                 # ----------------------------------
-                # Magnetic inversion
-                #
-                # tau = m x B
-                #
-                # minimum-norm solution:
-                #
-                # m = (B x tau) / |B|²
+                # Rotation angle
                 # ----------------------------------
 
-                m = np.cross(
-                    B,
-                    tau_cmd
-                ) / B_norm_sq
+                theta = np.arccos(
+                    np.clip(
+                        np.dot(x_body, nadir_B),
+                        -1.0,
+                        1.0
+                    )
+                )
+
+                # ----------------------------------
+                # Deadband
+                # ----------------------------------
+
+                if theta >= self.deadbandAngleRad:
+
+                    # ----------------------------------
+                    # Rotation axis
+                    # ----------------------------------
+
+                    e = np.cross(
+                        x_body,
+                        nadir_B
+                    )
+
+                    e_norm = np.linalg.norm(e)
+
+                    # ----------------------------------
+                    # Near-singular protection
+                    # ----------------------------------
+
+                    if e_norm > 1e-12:
+                        e_hat = e / e_norm
+
+                        rotation_vector = (
+                            theta * e_hat
+                        )
+
+                        # ----------------------------------
+                        # Torque command
+                        #
+                        # tau = K * I * rotation_vector
+                        # ----------------------------------
+
+                        tau_cmd = (
+                            self.gain
+                            * (
+                                self.I
+                                @ rotation_vector
+                            )
+                        )
+
+            # ----------------------------------
+            # Magnetic inversion
+            #
+            # tau = m x B
+            #
+            # minimum-norm solution:
+            #
+            # m = (B x tau) / |B|²
+            # ----------------------------------
+
+            m = np.cross(
+                B,
+                tau_cmd
+            ) / B_norm_sq
 
 
         # --------------------------
