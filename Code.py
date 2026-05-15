@@ -949,7 +949,37 @@ def run():
         angle_x_nadir_deg
     ))
 
-    csv_metadata = f"""# =====================================================
+    # =====================================================
+    # CONTROLLER-SPECIFIC GAIN METADATA
+    # =====================================================
+
+    gain_metadata = ""
+
+    if controller_mode == "BDOT":
+
+        gain_metadata = (
+            f"# BG:\n"
+            f"# {BDOT_GAIN}\n"
+            f"#\n"
+        )
+
+    elif controller_mode == "NADIR_POINTING":
+
+        gain_metadata = (
+            f"# BG:\n"
+            f"# {BDOT_GAIN_NADIR}\n"
+            f"#\n"
+            f"# KPN:\n"
+            f"# {KP_NADIR}\n"
+            f"#\n"
+        )
+
+    # =====================================================
+    # CSV METADATA
+    # =====================================================
+
+    csv_metadata = f"""
+    # =====================================================
     # ADCS Simulation Results
     # =====================================================
     #
@@ -959,6 +989,7 @@ def run():
     # Active Controller:
     # {ACTIVE_CONTROLLER}
     #
+    {gain_metadata}
     # Dynamics Timestep [s]:
     # {DYN_DT_S}
     #

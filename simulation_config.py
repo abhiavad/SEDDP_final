@@ -33,6 +33,9 @@ import numpy as np
 from fsw_config import (
     FSW_STEP_TIME_S,
     ACTIVE_CONTROLLER,
+    BDOT_GAIN,
+    BDOT_GAIN_NADIR,
+    KP_NADIR,
 )
 
 from Basilisk.utilities import (
@@ -327,7 +330,7 @@ LP_M = 0.15
 # PANEL DEPLOYMENT ANGLE [deg] 
 # ----------------------------------------------------------
 
-THETA_PANEL_DEG = 135.0 #90 deg to 180 deg
+THETA_PANEL_DEG = 180.0 #90 deg to 180 deg
 
 # ==========================================================
 # SPACECRAFT MASS PROPERTIES
@@ -408,34 +411,28 @@ PANEL_THICKNESS_M = 0.002
 # AUTOMATIC OUTPUT FOLDER NAMING
 # ==========================================================
 
+controller_mode = ACTIVE_CONTROLLER.strip().upper()
+
 # ----------------------------------------------------------
 # CONTROLLER TAG
 # ----------------------------------------------------------
 
-controller_mode = ACTIVE_CONTROLLER.strip().upper()
+controller_tag_map = {
+    "NADIR_POINTING": "NP",
+    "BDOT": "BDOT",
+}
 
-if controller_mode == "NADIR_POINTING":
-
-    controller_tag = "NP"
-
-elif controller_mode == "BDOT":
-
-    controller_tag = "BDOT"
-
-else:
-
-    controller_tag = controller_mode
+controller_tag = controller_tag_map.get(
+    controller_mode,
+    controller_mode
+)
 
 # ----------------------------------------------------------
 # ALTITUDE TAG
 # ----------------------------------------------------------
 
-altitude_km = int(
-    ATMOSPHERE_SCALE_HEIGHT_M / 1000.0
-)
-
 altitude_tag = (
-    f"{altitude_km}KM"
+    f"{int(ATMOSPHERE_SCALE_HEIGHT_M / 1000.0)}KM"
 )
 
 # ----------------------------------------------------------
@@ -454,13 +451,10 @@ simulation_days = (
     SIMULATION_TIME_S / 86400.0
 )
 
-simulation_days_tag = (
+simulation_tag = (
     f"{simulation_days:.1f}"
     .replace(".", "_")
-)
-
-simulation_tag = (
-    f"{simulation_days_tag}DAYS"
+    + "DAYS"
 )
 
 # ----------------------------------------------------------
@@ -477,19 +471,51 @@ omega0_mag = np.linalg.norm(
 omega0_tag = (
     f"{omega0_mag:.4f}"
     .replace(".", "_")
+    + "_RPS"
 )
+
+# ----------------------------------------------------------
+# GAIN TAGS
+# ----------------------------------------------------------
+
+if controller_mode == "BDOT":
+
+    gain_tag = (
+        f"BG_{BDOT_GAIN:.6g}"
+        .replace(".", "_")
+    )
+
+elif controller_mode == "NADIR_POINTING":
+
+    gain_tag = (
+        f"BG_{BDOT_GAIN_NADIR:.6g}"
+        .replace(".", "_")
+        + "__"
+        + f"KPN_{KP_NADIR:.6g}".replace(".", "_")
+    )
+
+else:
+
+    gain_tag = "UNKNOWN_GAIN"
 
 # ----------------------------------------------------------
 # FINAL OUTPUT FOLDER NAME
 # ----------------------------------------------------------
 
-OUTPUT_FOLDER_NAME = (
-    f"{controller_tag}"
-    f"__{altitude_tag}"
-    f"__{panel_angle_tag}"
-    f"__{simulation_tag}"
-    f"__{omega0_tag}_RPS"
-)
+OUTPUT_FOLDER_NAME = "__".join([
+
+    controller_tag,
+
+    altitude_tag,
+
+    panel_angle_tag,
+
+    simulation_tag,
+
+    omega0_tag,
+
+    gain_tag
+])
 
 # ==========================================================
 # EXPORT
