@@ -40,13 +40,13 @@ from Basilisk.utilities import (
 # OUTPUT DIRECTORY
 # ==========================================================
 
-OUTPUT_FOLDER_NAME = "600_nadir_3orbits_135degsolarpanel"
+OUTPUT_FOLDER_NAME = "trying3"
 
 # ==========================================================
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 86400*0.5
+SIMULATION_TIME_S = 86400
 
 # ==========================================================
 # Dynamics timestep
@@ -124,12 +124,12 @@ A body-frame perturbation rotation is then applied.
 # ----------------------------------------------------------
 
 INITIAL_PERTURBATION_AXIS_B = np.array([
-    1.0,
-    1.0,
+    0.0,
+    0.0,
     1.0,
 ])
 
-INITIAL_PERTURBATION_ANGLE_DEG = 135.0
+INITIAL_PERTURBATION_ANGLE_DEG = 180.0
 
 # ----------------------------------------------------------
 # ORBITAL STATE
