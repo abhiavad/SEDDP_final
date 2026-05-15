@@ -110,6 +110,7 @@ from horizon_comm import HorizonComm
 from mode_scheduler import ModeScheduler
 from bdot_predictor import BdotPredictor
 from nadir_predictor import NadirPredictor
+from check_performance import main as run_performance_analysis
 from bdot_controller import BdotController
 from dipoleselector import DipoleSelector
 from Dipole_quantizer import DipoleQuantizer
@@ -1235,6 +1236,14 @@ def run():
 
         OUTPUT_DIR
     )
+
+    # =====================================================
+    # PERFORMANCE ANALYSIS
+    # =====================================================
+
+    print("\nRunning performance analysis...\n")
+
+    run_performance_analysis()
 
     return figureList
 
