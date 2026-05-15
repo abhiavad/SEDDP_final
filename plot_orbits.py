@@ -458,6 +458,6 @@ def plotOrbits(
 
         print(f"Saved figure: {save_path}")
 
-    plt.show()
+    plt.close("all")
 
     return figureList

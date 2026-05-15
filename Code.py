@@ -110,6 +110,7 @@ from horizon_comm import HorizonComm
 from mode_scheduler import ModeScheduler
 from bdot_predictor import BdotPredictor
 from nadir_predictor import NadirPredictor
+from check_performance import main as run_performance_analysis
 from bdot_controller import BdotController
 from dipoleselector import DipoleSelector
 from Dipole_quantizer import DipoleQuantizer
@@ -948,7 +949,37 @@ def run():
         angle_x_nadir_deg
     ))
 
-    csv_metadata = f"""# =====================================================
+    # =====================================================
+    # CONTROLLER-SPECIFIC GAIN METADATA
+    # =====================================================
+
+    gain_metadata = ""
+
+    if controller_mode == "BDOT":
+
+        gain_metadata = (
+            f"# BG:\n"
+            f"# {BDOT_GAIN}\n"
+            f"#\n"
+        )
+
+    elif controller_mode == "NADIR_POINTING":
+
+        gain_metadata = (
+            f"# BG:\n"
+            f"# {BDOT_GAIN_NADIR}\n"
+            f"#\n"
+            f"# KPN:\n"
+            f"# {KP_NADIR}\n"
+            f"#\n"
+        )
+
+    # =====================================================
+    # CSV METADATA
+    # =====================================================
+
+    csv_metadata = f"""
+    # =====================================================
     # ADCS Simulation Results
     # =====================================================
     #
@@ -958,6 +989,7 @@ def run():
     # Active Controller:
     # {ACTIVE_CONTROLLER}
     #
+    {gain_metadata}
     # Dynamics Timestep [s]:
     # {DYN_DT_S}
     #
@@ -1235,6 +1267,14 @@ def run():
 
         OUTPUT_DIR
     )
+
+    # =====================================================
+    # PERFORMANCE ANALYSIS
+    # =====================================================
+
+    print("\nRunning performance analysis...\n")
+
+    run_performance_analysis()
 
     return figureList
 

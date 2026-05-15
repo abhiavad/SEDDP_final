@@ -29,7 +29,14 @@ FRAME CONVENTION
 - Total spacecraft CG is computed in mass_properties.py.
 """
 import numpy as np
-from fsw_config import FSW_STEP_TIME_S
+
+from fsw_config import (
+    FSW_STEP_TIME_S,
+    ACTIVE_CONTROLLER,
+    BDOT_GAIN,
+    BDOT_GAIN_NADIR,
+    KP_NADIR,
+)
 
 from Basilisk.utilities import (
     orbitalMotion,
@@ -37,16 +44,10 @@ from Basilisk.utilities import (
 )
 
 # ==========================================================
-# OUTPUT DIRECTORY
-# ==========================================================
-
-OUTPUT_FOLDER_NAME = "trying3"
-
-# ==========================================================
 # TIMING
 # ==========================================================
 
-SIMULATION_TIME_S = 86400
+SIMULATION_TIME_S = 0.5*86400
 
 # ==========================================================
 # Dynamics timestep
@@ -404,6 +405,117 @@ Current inertia model assumes:
 """
 
 PANEL_THICKNESS_M = 0.002
+
+
+# ==========================================================
+# AUTOMATIC OUTPUT FOLDER NAMING
+# ==========================================================
+
+controller_mode = ACTIVE_CONTROLLER.strip().upper()
+
+# ----------------------------------------------------------
+# CONTROLLER TAG
+# ----------------------------------------------------------
+
+controller_tag_map = {
+    "NADIR_POINTING": "NP",
+    "BDOT": "BDOT",
+}
+
+controller_tag = controller_tag_map.get(
+    controller_mode,
+    controller_mode
+)
+
+# ----------------------------------------------------------
+# ALTITUDE TAG
+# ----------------------------------------------------------
+
+altitude_tag = (
+    f"{int(ATMOSPHERE_SCALE_HEIGHT_M / 1000.0)}KM"
+)
+
+# ----------------------------------------------------------
+# SOLAR PANEL ANGLE TAG
+# ----------------------------------------------------------
+
+panel_angle_tag = (
+    f"{int(THETA_PANEL_DEG)}DEG_SPA"
+)
+
+# ----------------------------------------------------------
+# SIMULATION DURATION TAG
+# ----------------------------------------------------------
+
+simulation_days = (
+    SIMULATION_TIME_S / 86400.0
+)
+
+simulation_tag = (
+    f"{simulation_days:.1f}"
+    .replace(".", "_")
+    + "DAYS"
+)
+
+# ----------------------------------------------------------
+# INITIAL ANGULAR RATE MAGNITUDE TAG
+# ----------------------------------------------------------
+
+omega0_mag = np.linalg.norm(
+    np.array(
+        INITIAL_OMEGA_BN_B_RADPS,
+        dtype=float
+    )
+)
+
+omega0_tag = (
+    f"{omega0_mag:.4f}"
+    .replace(".", "_")
+    + "_RPS"
+)
+
+# ----------------------------------------------------------
+# GAIN TAGS
+# ----------------------------------------------------------
+
+if controller_mode == "BDOT":
+
+    gain_tag = (
+        f"BG_{BDOT_GAIN:.6g}"
+        .replace(".", "_")
+    )
+
+elif controller_mode == "NADIR_POINTING":
+
+    gain_tag = (
+        f"BG_{BDOT_GAIN_NADIR:.6g}"
+        .replace(".", "_")
+        + "__"
+        + f"KPN_{KP_NADIR:.6g}".replace(".", "_")
+    )
+
+else:
+
+    gain_tag = "UNKNOWN_GAIN"
+
+# ----------------------------------------------------------
+# FINAL OUTPUT FOLDER NAME
+# ----------------------------------------------------------
+
+OUTPUT_FOLDER_NAME = "__".join([
+
+    controller_tag,
+
+    altitude_tag,
+
+    panel_angle_tag,
+
+    simulation_tag,
+
+    omega0_tag,
+
+    gain_tag
+])
 
 # ==========================================================
 # EXPORT
