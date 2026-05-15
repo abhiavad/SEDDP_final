@@ -92,7 +92,7 @@ else:
 # ----------------------------------------------------------
 
 # Existing validated detumble gain
-BDOT_GAIN = 0.01
+BDOT_GAIN = 0.04
 
 # Future nadir-mode damping gain.
 #
@@ -336,7 +336,7 @@ STEERING_MATRIX = [
 # ==========================================================
 
 # Magnetorquer dipole-command quantization step
-DIPOLE_QUANTIZATION_STEP = 0.0005
+DIPOLE_QUANTIZATION_STEP = 0.025
 
 # ==========================================================
 # EXPORT
